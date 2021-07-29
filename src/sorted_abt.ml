@@ -4,9 +4,7 @@
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at https://mozilla.org/MPL/2.0/. *)
 
-module Eq = struct
-  type (_, _) t = Refl : ('a, 'a) t
-end
+type (_, _) eq = Refl : ('a, 'a) eq
 
 module type INPUT = sig
   type 'sort sort
@@ -14,7 +12,7 @@ module type INPUT = sig
   type ('arity, 'sort) operator
 
   val sort_eq
-    : 'a sort -> 'b sort -> (('a, 'b) Eq.t, ('a, 'b) Eq.t -> 'any) Either.t
+    : 'a sort -> 'b sort -> (('a, 'b) eq, ('a, 'b) eq -> 'any) Either.t
 end
 
 let counter = ref 0
@@ -30,7 +28,7 @@ module Make (M : INPUT) = struct
     counter := id + 1;
     { id; sort }
 
-  let var_eq : type s1 s2 . s1 var -> s2 var -> (s1, s2) Eq.t option =
+  let var_eq : type s1 s2 . s1 var -> s2 var -> (s1, s2) eq option =
     fun v1 v2 -> match M.sort_eq v1.sort v2.sort with
       | Left Refl when v1.id = v2.id -> Some Refl
       | _ -> None
@@ -61,7 +59,7 @@ module Make (M : INPUT) = struct
     fun v t -> match t with
       | FV v' ->
         begin match var_eq v v' with
-          | Some Refl -> FV v
+          | Some Refl -> BV(0, v.sort)
           | None -> FV v'
         end
       | BV(i, sort) -> BV(i + 1, sort)

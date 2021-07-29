@@ -27,7 +27,7 @@ module Input = struct
     : type s1 s2 any
     . s1 sort
       -> s2 sort
-      -> ((s1, s2) Sorted_abt.Eq.t, (s1, s2) Sorted_abt.Eq.t -> any) Either.t =
+      -> ((s1, s2) Sorted_abt.eq, (s1, s2) Sorted_abt.eq -> any) Either.t =
     fun s1 s2 -> match s1, s2 with
       | Term, Term -> Left Refl
       | Term, Type -> Right (function _ -> .)
