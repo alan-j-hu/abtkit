@@ -4,18 +4,8 @@
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at https://mozilla.org/MPL/2.0/. *)
 
-type (_, _) pair = |
-
 module Eq = struct
   type (_, _) t = Refl : ('a, 'a) t
-end
-
-module type LIB = sig
-  type ('valence, 'sort) t
-
-  and 'arity arity =
-    | Nil : unit arity
-    | Cons : ('a, 'b) t * 'c arity -> (('a, 'b) pair * 'c) arity
 end
 
 module type INPUT = sig
@@ -24,31 +14,12 @@ module type INPUT = sig
   type ('arity, 'sort) operator
 
   val sort_eq
-    : 'a sort -> 'b sort -> (('a, 'b) Eq.t, ('a, 'b) Eq.t -> [> ]) Either.t
+    : 'a sort -> 'b sort -> (('a, 'b) Eq.t, ('a, 'b) Eq.t -> 'any) Either.t
 end
 
 let counter = ref 0
 
-module Make (M : INPUT) : sig
-  type 'sort var
-
-  type ('valence, 'sort) t
-
-  and 'arity arity =
-    | Nil : unit arity
-    | Cons : ('a, 'b) t * 'c arity -> (('a, 'b) pair * 'c) arity
-
-  type ('valence, 'sort) view =
-    | VABS : 's var * ('valence, 'sort) t -> ('s * 'valence, 'sort) view
-    | VOP : ('arity, 'sort) M.operator * 'arity arity -> (unit, 'sort) view
-    | VAR : 'sort var -> (unit, 'sort) view
-
-  val fresh_var : 'sort M.sort -> 'sort var
-
-  val into : ('v, 's) view -> ('v, 's) t
-
-  val out : ('v, 's) t -> ('v, 's) view
-end = struct
+module Make (M : INPUT) = struct
   type 'sort var = {
     id : int;
     sort : 'sort M.sort;
@@ -72,7 +43,7 @@ end = struct
 
   and 'arity arity =
     | Nil : unit arity
-    | Cons : ('a, 'b) t * 'c arity -> (('a, 'b) pair * 'c) arity
+    | Cons : ('a, 'b) t * 'c arity -> (('a -> 'b) * 'c) arity
 
   type ('valence, 'sort) view =
     | VABS : 's var * ('valence, 'sort) t -> ('s * 'valence, 'sort) view

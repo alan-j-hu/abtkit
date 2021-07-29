@@ -12,19 +12,11 @@ type 'sort sort =
   | Type : ty sort
 
 type ('arity, 'sort) operator =
-  | Unit
-    : (unit, ty) operator
-  | Arrow
-    : (((unit, ty) Sorted_abt.pair * ((unit, ty) Sorted_abt.pair * unit))
-      , ty) operator
-  | Ax
-    : (unit, tm) operator
-  | App
-    : ((unit, tm) Sorted_abt.pair * ((unit, tm) Sorted_abt.pair * unit)
-      , tm) operator
-  | Lam
-    : ((unit, ty) Sorted_abt.pair * ((tm * unit, tm) Sorted_abt.pair * unit)
-      , tm) operator
+  | Unit : (unit, ty) operator
+  | Arrow : (((unit -> ty) * ((unit -> ty) * unit)), ty) operator
+  | Ax : (unit, tm) operator
+  | App : ((unit -> tm) * ((unit -> tm) * unit), tm) operator
+  | Lam : ((unit -> ty) * (((tm * unit) -> tm) * unit), tm) operator
 
 module Input = struct
   type nonrec 'sort sort = 'sort sort
