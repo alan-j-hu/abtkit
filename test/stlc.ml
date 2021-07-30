@@ -13,10 +13,10 @@ type 'sort sort =
 
 type ('arity, 'sort) operator =
   | Unit : (unit, ty) operator
-  | Arrow : (((unit -> ty) * ((unit -> ty) * unit)), ty) operator
+  | Arrow : ((ty * (ty * unit)), ty) operator
   | Ax : (unit, tm) operator
-  | App : ((unit -> tm) * ((unit -> tm) * unit), tm) operator
-  | Lam : ((unit -> ty) * (((tm * unit) -> tm) * unit), tm) operator
+  | App : (tm * (tm * unit), tm) operator
+  | Lam : (ty * (((tm * unit) -> tm) * unit), tm) operator
 
 module Input = struct
   type nonrec 'sort sort = 'sort sort

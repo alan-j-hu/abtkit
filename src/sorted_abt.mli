@@ -29,22 +29,22 @@ module type S = sig
 
   type 'sort var
 
-  type ('valence, 'sort) t
+  type 'valence t
 
-  and 'arity arity =
+  type 'arity arity =
     | Nil : unit arity
-    | Cons : ('a, 'b) t * 'c arity -> (('a -> 'b) * 'c) arity
+    | Cons : 'valence t * 'a arity -> ('valence * 'c) arity
 
-  type ('valence, 'sort) view =
-    | VABS : 's var * ('valence, 'sort) t -> ('s * 'valence, 'sort) view
-    | VOP : ('arity, 'sort) operator * 'arity arity -> (unit, 'sort) view
-    | VAR : 'sort var -> (unit, 'sort) view
+  type 'valence view =
+    | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
+    | VOP : ('arity, 'sort) operator * 'arity arity -> 'sort view
+    | VAR : 'sort var -> 'sort view
 
   val fresh_var : 'sort sort -> 'sort var
 
-  val into : ('v, 's) view -> ('v, 's) t
+  val into : 'v view -> 'v t
 
-  val out : ('v, 's) t -> ('v, 's) view
+  val out : 'v t -> 'v view
 end
 
 module Make(M : INPUT) : S

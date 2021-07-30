@@ -22,22 +22,22 @@ module type S = sig
 
   type 'sort var
 
-  type ('valence, 'sort) t
+  type 'valence t
 
-  and 'arity arity =
+  type 'arity arity =
     | Nil : unit arity
-    | Cons : ('a, 'b) t * 'c arity -> (('a -> 'b) * 'c) arity
+    | Cons : 'valence t * 'a arity -> ('valence * 'c) arity
 
-  type ('valence, 'sort) view =
-    | VABS : 's var * ('valence, 'sort) t -> ('s * 'valence, 'sort) view
-    | VOP : ('arity, 'sort) operator * 'arity arity -> (unit, 'sort) view
-    | VAR : 'sort var -> (unit, 'sort) view
+  type 'valence view =
+    | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
+    | VOP : ('arity, 'sort) operator * 'arity arity -> 'sort view
+    | VAR : 'sort var -> 'sort view
 
   val fresh_var : 'sort sort -> 'sort var
 
-  val into : ('v, 's) view -> ('v, 's) t
+  val into : 'v view -> 'v t
 
-  val out : ('v, 's) t -> ('v, 's) view
+  val out : 'v t -> 'v view
 end
 
 let counter = ref 0
@@ -60,29 +60,29 @@ module Make(M : INPUT) = struct
       | Left Refl when v1.id = v2.id -> Some Refl
       | _ -> None
 
-  type ('valence, 'sort) t =
-    | FV : 'sort var -> (unit, 'sort) t
-    | BV : int * 'sort sort -> (unit, 'sort) t
-    | ABS : 'a sort * ('valence, 'sort) t -> ('a * 'valence, 'sort) t
-    | OPER : ('arity, 'sort) operator * 'arity arity -> (unit, 'sort) t
+  type 'valence t =
+    | FV : 'sort var -> 'sort t
+    | BV : int * 'sort sort -> 'sort t
+    | ABS : 'sort sort * 'valence t -> ('sort -> 'valence) t
+    | OPER : ('arity, 'sort) operator * 'arity arity -> 'sort t
 
   and 'arity arity =
     | Nil : unit arity
-    | Cons : ('a, 'b) t * 'c arity -> (('a -> 'b) * 'c) arity
+    | Cons : 'valence t * 'a arity -> ('valence * 'c) arity
 
-  type ('valence, 'sort) view =
-    | VABS : 's var * ('valence, 'sort) t -> ('s * 'valence, 'sort) view
-    | VOP : ('arity, 'sort) operator * 'arity arity -> (unit, 'sort) view
-    | VAR : 'sort var -> (unit, 'sort) view
+  type 'valence view =
+    | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
+    | VOP : ('arity, 'sort) operator * 'arity arity -> 'sort view
+    | VAR : 'sort var -> 'sort view
 
-  type poly = { f : 'v 's1 's2 . 's1 var -> ('v, 's2) t -> ('v, 's2) t }
+  type poly = { f : 'v 's . 's var -> 'v t -> 'v t }
 
   let rec map_rands : type a s . poly -> s var -> a arity -> a arity =
     fun poly v rands -> match rands with
       | Nil -> Nil
       | Cons(x, xs) -> Cons(poly.f v x, map_rands poly v xs)
 
-  let rec bind : type s1 s2 v . s1 var -> (v, s2) t -> (v, s2) t =
+  let rec bind : type s v . s var -> v t -> v t =
     fun v t -> match t with
       | FV v' ->
         begin match var_eq v v' with
@@ -93,12 +93,12 @@ module Make(M : INPUT) = struct
       | ABS(sort, body) -> ABS(sort, bind v body)
       | OPER(ator, ands) -> OPER(ator, map_rands { f = bind } v ands)
 
-  let into : type s v . (v, s) view -> (v, s) t = function
+  let into : type v . v view -> v t = function
     | VABS(v, body) -> ABS(v.sort, bind v body)
     | VOP(ator, ands) -> OPER(ator, ands)
     | VAR v -> FV v
 
-  let rec unbind : type s1 s2 v . s1 var -> (v, s2) t -> (v, s2) t =
+  let rec unbind : type s v . s var -> v t -> v t =
     fun v t -> match t with
       | FV v' -> FV v'
       | BV(0, sort) ->
@@ -110,7 +110,7 @@ module Make(M : INPUT) = struct
       | ABS(sort, body) -> ABS(sort, unbind v body)
       | OPER(ator, ands) -> OPER(ator, map_rands { f = unbind } v ands)
 
-  let out : type s v . (v, s) t -> (v, s) view = function
+  let out : type v . v t -> v view = function
     | FV v -> VAR v
     | BV _ -> failwith "Unbound variable!"
     | ABS(sort, body) ->
