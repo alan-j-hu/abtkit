@@ -4,24 +4,20 @@
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at https://mozilla.org/MPL/2.0/. *)
 
-type ty = |
-type tm = |
-
-type 'sort sort =
-  | Term : tm sort
-  | Type : ty sort
-
-type ('arity, 'sort) operator =
-  | Unit : (ty, ty) operator
-  | Arrow : (ty -> ty -> ty, ty) operator
-  | Ax : (tm, tm) operator
-  | App : (tm -> tm -> tm, tm) operator
-  | Lam : (ty -> (tm -> tm) -> tm, tm) operator
-
 module Input = struct
-  type nonrec 'sort sort = 'sort sort
+  type ty = Ty
+  type tm = Tm
 
-  type nonrec ('arity, 'sort) operator = ('arity, 'sort) operator
+  type 'sort sort =
+    | Term : tm sort
+    | Type : ty sort
+
+  type ('arity, 'sort) operator =
+    | Unit : (ty, ty) operator
+    | Arrow : (ty -> ty -> ty, ty) operator
+    | Ax : (tm, tm) operator
+    | App : (tm -> tm -> tm, tm) operator
+    | Lam : (ty -> (tm -> tm) -> tm, tm) operator
 
   let sort_eq
     : type s1 s2 any
@@ -37,6 +33,8 @@ end
 
 module Abt = Sorted_abt.Make(Input)
 
+open Input
+
 let unit_type = Abt.into (Abt.VOP(Unit, Nil))
 
 let unit_arr_unit =
@@ -48,5 +46,20 @@ let create_unit_id () =
   let abs = Abt.into (Abt.VABS(x, xv)) in
   Abt.into (Abt.VOP(Lam, Cons(unit_type, Cons(abs, Nil))))
 
+let rec equal_types (ty1 : ty Abt.t) (ty2 : ty Abt.t) =
+  match Abt.out ty1, Abt.out ty2 with
+  | VOP(Arrow, Cons(a, Cons(b, Nil))), VOP(Arrow, Cons(c, Cons(d, Nil))) ->
+    equal_types a c && equal_types b d
+  | VOP(Arrow, Cons(_, Cons(_, Nil))), VOP(Unit, Nil) -> false
+  | VOP(Unit, Nil), VOP(Arrow, Cons(_, Cons(_, Nil))) -> false
+  | VOP(Unit, Nil), VOP(Unit, Nil) -> true
+  | VAR _, VOP _ -> false
+  | VOP _, VAR _ -> false
+  | VAR _, VAR _ -> failwith "Unreachable!"
+
 let () =
-  assert (create_unit_id () = create_unit_id ())
+  assert (create_unit_id () = create_unit_id ());
+  assert (equal_types unit_type unit_type);
+  assert (equal_types unit_arr_unit unit_arr_unit);
+  assert (equal_types unit_arr_unit unit_type = false);
+  assert (equal_types unit_type unit_arr_unit = false)

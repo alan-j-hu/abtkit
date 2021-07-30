@@ -31,13 +31,13 @@ module type S = sig
 
   type 'valence t
 
-  type 'arity arity =
-    | Nil : 'sort arity
-    | Cons : 'valence t * 'a arity -> ('valence -> 'a) arity
+  type ('arity, 'sort) arity =
+    | Nil : ('sort, 'sort) arity
+    | Cons : 'valence t * ('a, 'sort) arity -> ('valence -> 'a, 'sort) arity
 
   type 'valence view =
     | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
-    | VOP : ('arity, 'sort) operator * 'arity arity -> 'sort view
+    | VOP : ('arity, 'sort) operator * ('arity, 'sort) arity -> 'sort view
     | VAR : 'sort var -> 'sort view
 
   val fresh_var : 'sort sort -> 'sort var

@@ -24,13 +24,13 @@ module type S = sig
 
   type 'valence t
 
-  type 'arity arity =
-    | Nil : 'sort arity
-    | Cons : 'valence t * 'a arity -> ('valence -> 'a) arity
+  type ('arity, 'sort) arity =
+    | Nil : ('sort, 'sort) arity
+    | Cons : 'valence t * ('a, 'sort) arity -> ('valence -> 'a, 'sort) arity
 
   type 'valence view =
     | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
-    | VOP : ('arity, 'sort) operator * 'arity arity -> 'sort view
+    | VOP : ('arity, 'sort) operator * ('arity, 'sort) arity -> 'sort view
     | VAR : 'sort var -> 'sort view
 
   val fresh_var : 'sort sort -> 'sort var
@@ -64,20 +64,21 @@ module Make(M : INPUT) = struct
     | FV : 'sort var -> 'sort t
     | BV : int * 'sort sort -> 'sort t
     | ABS : 'sort sort * 'valence t -> ('sort -> 'valence) t
-    | OPER : ('arity, 'sort) operator * 'arity arity -> 'sort t
+    | OPER : ('arity, 'sort) operator * ('arity, 'sort) arity -> 'sort t
 
-  and 'arity arity =
-    | Nil : 'sort arity
-    | Cons : 'valence t * 'a arity -> ('valence -> 'a) arity
+  and ('arity, 'sort) arity =
+    | Nil : ('sort, 'sort) arity
+    | Cons : 'valence t * ('a, 'sort) arity -> ('valence -> 'a, 'sort) arity
 
   type 'valence view =
     | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
-    | VOP : ('arity, 'sort) operator * 'arity arity -> 'sort view
+    | VOP : ('arity, 'sort) operator * ('arity, 'sort) arity -> 'sort view
     | VAR : 'sort var -> 'sort view
 
   type poly = { f : 'v 's . 's var -> 'v t -> 'v t }
 
-  let rec map_rands : type a s . poly -> s var -> a arity -> a arity =
+  let rec map_rands
+    : type a s1 s2 . poly -> s1 var -> (a, s2) arity -> (a, s2) arity =
     fun poly v rands -> match rands with
       | Nil -> Nil
       | Cons(x, xs) -> Cons(poly.f v x, map_rands poly v xs)
