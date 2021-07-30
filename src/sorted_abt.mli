@@ -32,8 +32,8 @@ module type S = sig
   type 'valence t
 
   type 'arity arity =
-    | Nil : unit arity
-    | Cons : 'valence t * 'a arity -> ('valence * 'a) arity
+    | Nil : 'sort arity
+    | Cons : 'valence t * 'a arity -> ('valence -> 'a) arity
 
   type 'valence view =
     | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
