@@ -4,7 +4,8 @@
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at https://mozilla.org/MPL/2.0/. *)
 
-type (_, _) eq = Refl : ('a, 'a) eq
+type (_, _) eq =
+  | Refl : ('a, 'a) eq (** Proof that ['a] and ['a] are equal. *)
 (** [('a, 'b) eq] is the proposition that ['a] and ['b] are equal. *)
 
 module type INPUT = sig
@@ -21,7 +22,11 @@ module type INPUT = sig
       returns a proof that their types are not equal. *)
 end
 
-module Make (M : INPUT) : sig
+module type S = sig
+  type 'sort sort
+
+  type ('arity, 'sort) operator
+
   type 'sort var
 
   type ('valence, 'sort) t
@@ -32,12 +37,16 @@ module Make (M : INPUT) : sig
 
   type ('valence, 'sort) view =
     | VABS : 's var * ('valence, 'sort) t -> ('s * 'valence, 'sort) view
-    | VOP : ('arity, 'sort) M.operator * 'arity arity -> (unit, 'sort) view
+    | VOP : ('arity, 'sort) operator * 'arity arity -> (unit, 'sort) view
     | VAR : 'sort var -> (unit, 'sort) view
 
-  val fresh_var : 'sort M.sort -> 'sort var
+  val fresh_var : 'sort sort -> 'sort var
 
   val into : ('v, 's) view -> ('v, 's) t
 
   val out : ('v, 's) t -> ('v, 's) view
 end
+
+module Make(M : INPUT) : S
+  with type 'sort sort = 'sort M.sort
+   and type ('arity, 'sort) operator = ('arity, 'sort) M.operator

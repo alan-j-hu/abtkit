@@ -15,12 +15,39 @@ module type INPUT = sig
     : 'a sort -> 'b sort -> (('a, 'b) eq, ('a, 'b) eq -> 'any) Either.t
 end
 
+module type S = sig
+  type 'sort sort
+
+  type ('arity, 'sort) operator
+
+  type 'sort var
+
+  type ('valence, 'sort) t
+
+  and 'arity arity =
+    | Nil : unit arity
+    | Cons : ('a, 'b) t * 'c arity -> (('a -> 'b) * 'c) arity
+
+  type ('valence, 'sort) view =
+    | VABS : 's var * ('valence, 'sort) t -> ('s * 'valence, 'sort) view
+    | VOP : ('arity, 'sort) operator * 'arity arity -> (unit, 'sort) view
+    | VAR : 'sort var -> (unit, 'sort) view
+
+  val fresh_var : 'sort sort -> 'sort var
+
+  val into : ('v, 's) view -> ('v, 's) t
+
+  val out : ('v, 's) t -> ('v, 's) view
+end
+
 let counter = ref 0
 
-module Make (M : INPUT) = struct
+module Make(M : INPUT) = struct
+  include M
+
   type 'sort var = {
     id : int;
-    sort : 'sort M.sort;
+    sort : 'sort sort;
   }
 
   let fresh_var sort =
@@ -29,15 +56,15 @@ module Make (M : INPUT) = struct
     { id; sort }
 
   let var_eq : type s1 s2 . s1 var -> s2 var -> (s1, s2) eq option =
-    fun v1 v2 -> match M.sort_eq v1.sort v2.sort with
+    fun v1 v2 -> match sort_eq v1.sort v2.sort with
       | Left Refl when v1.id = v2.id -> Some Refl
       | _ -> None
 
   type ('valence, 'sort) t =
     | FV : 'sort var -> (unit, 'sort) t
-    | BV : int * 'sort M.sort -> (unit, 'sort) t
-    | ABS : 'a M.sort * ('valence, 'sort) t -> ('a * 'valence, 'sort) t
-    | OPER : ('arity, 'sort) M.operator * 'arity arity -> (unit, 'sort) t
+    | BV : int * 'sort sort -> (unit, 'sort) t
+    | ABS : 'a sort * ('valence, 'sort) t -> ('a * 'valence, 'sort) t
+    | OPER : ('arity, 'sort) operator * 'arity arity -> (unit, 'sort) t
 
   and 'arity arity =
     | Nil : unit arity
@@ -45,7 +72,7 @@ module Make (M : INPUT) = struct
 
   type ('valence, 'sort) view =
     | VABS : 's var * ('valence, 'sort) t -> ('s * 'valence, 'sort) view
-    | VOP : ('arity, 'sort) M.operator * 'arity arity -> (unit, 'sort) view
+    | VOP : ('arity, 'sort) operator * 'arity arity -> (unit, 'sort) view
     | VAR : 'sort var -> (unit, 'sort) view
 
   type poly = { f : 'v 's1 's2 . 's1 var -> ('v, 's2) t -> ('v, 's2) t }
@@ -75,7 +102,7 @@ module Make (M : INPUT) = struct
     fun v t -> match t with
       | FV v' -> FV v'
       | BV(0, sort) ->
-        begin match M.sort_eq v.sort sort with
+        begin match sort_eq v.sort sort with
           | Left Refl -> FV v
           | Right _ -> failwith "Sort mismatch!"
         end

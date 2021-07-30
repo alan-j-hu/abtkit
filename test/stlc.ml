@@ -42,8 +42,11 @@ let unit_type = Abt.into (Abt.VOP(Unit, Nil))
 let unit_arr_unit =
   Abt.into (Abt.VOP(Arrow, Cons(unit_type, Cons(unit_type, Nil))))
 
-let unit_id =
+let create_unit_id () =
   let x = Abt.fresh_var Term in
   let xv = Abt.into (Abt.VAR x) in
   let abs = Abt.into (Abt.VABS(x, xv)) in
   Abt.into (Abt.VOP(Lam, Cons(unit_type, Cons(abs, Nil))))
+
+let () =
+  assert (create_unit_id () = create_unit_id ())
