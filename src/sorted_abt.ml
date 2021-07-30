@@ -26,7 +26,7 @@ module type S = sig
 
   type 'arity arity =
     | Nil : unit arity
-    | Cons : 'valence t * 'a arity -> ('valence * 'c) arity
+    | Cons : 'valence t * 'a arity -> ('valence * 'a) arity
 
   type 'valence view =
     | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
@@ -68,7 +68,7 @@ module Make(M : INPUT) = struct
 
   and 'arity arity =
     | Nil : unit arity
-    | Cons : 'valence t * 'a arity -> ('valence * 'c) arity
+    | Cons : 'valence t * 'a arity -> ('valence * 'a) arity
 
   type 'valence view =
     | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view

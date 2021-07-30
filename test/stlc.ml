@@ -16,7 +16,7 @@ type ('arity, 'sort) operator =
   | Arrow : ((ty * (ty * unit)), ty) operator
   | Ax : (unit, tm) operator
   | App : (tm * (tm * unit), tm) operator
-  | Lam : (ty * (((tm * unit) -> tm) * unit), tm) operator
+  | Lam : (ty * ((tm -> tm) * unit), tm) operator
 
 module Input = struct
   type nonrec 'sort sort = 'sort sort
