@@ -75,13 +75,13 @@ module Make(Sig : Signature) = struct
     | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
     | Var : 'sort var -> 'sort view
 
-  type poly = { f : 'v 's . 's var -> 'v t -> 'v t }
+  type poly = { f : 'v 's . 's var -> 'v t -> 'v t } [@@ocaml.unboxed]
 
-  let rec map_rands
+  let rec map_operands
     : type a s1 s2 . poly -> s1 var -> (a, s2) operands -> (a, s2) operands =
-    fun poly v rands -> match rands with
+    fun poly v operands -> match operands with
       | Nil -> Nil
-      | Cons(x, xs) -> Cons(poly.f v x, map_rands poly v xs)
+      | Cons(x, xs) -> Cons(poly.f v x, map_operands poly v xs)
 
   let rec bind : type s v . s var -> v t -> v t =
     fun v t -> match t with
@@ -92,7 +92,7 @@ module Make(Sig : Signature) = struct
         end
       | BV(i, sort) -> BV(i + 1, sort)
       | ABS(sort, body) -> ABS(sort, bind v body)
-      | OPER(ator, ands) -> OPER(ator, map_rands { f = bind } v ands)
+      | OPER(ator, ands) -> OPER(ator, map_operands { f = bind } v ands)
 
   let into : type v . v view -> v t = function
     | Abs(v, body) -> ABS(v.sort, bind v body)
@@ -109,7 +109,7 @@ module Make(Sig : Signature) = struct
         end
       | BV(n, sort) -> BV(n - 1, sort)
       | ABS(sort, body) -> ABS(sort, unbind v body)
-      | OPER(ator, ands) -> OPER(ator, map_rands { f = unbind } v ands)
+      | OPER(ator, ands) -> OPER(ator, map_operands { f = unbind } v ands)
 
   let out : type v . v t -> v view = function
     | FV v -> Var v
