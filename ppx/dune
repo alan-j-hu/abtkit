@@ -1,5 +1,6 @@
 (library
- (name hlist_ppx)
+ (name sorted_abt_ppx)
+ (public_name sorted-abt-ppx)
  (kind ppx_rewriter)
  (libraries ppxlib)
  (preprocess (pps ppxlib.metaquot)))

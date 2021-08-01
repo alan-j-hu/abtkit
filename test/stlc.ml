@@ -4,7 +4,7 @@
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at https://mozilla.org/MPL/2.0/. *)
 
-module Input = struct
+module Stlc_sig = struct
   type ty = Ty
   type tm = Tm
 
@@ -31,9 +31,9 @@ module Input = struct
       | Type, Term -> Right (function _ -> .)
 end
 
-module Abt = Sorted_abt.Make(Input)
+module Abt = Sorted_abt.Make(Stlc_sig)
 
-open Input
+open Stlc_sig
 
 let unit_type = Abt.into (Abt.Op(Unit, Nil))
 
