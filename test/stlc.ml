@@ -35,27 +35,27 @@ module Abt = Sorted_abt.Make(Input)
 
 open Input
 
-let unit_type = Abt.into (Abt.VOP(Unit, Nil))
+let unit_type = Abt.into (Abt.Op(Unit, Nil))
 
 let unit_arr_unit =
-  Abt.into (Abt.VOP(Arrow, Cons(unit_type, Cons(unit_type, Nil))))
+  Abt.into (Abt.Op(Arrow, Cons(unit_type, Cons(unit_type, Nil))))
 
 let create_unit_id () =
   let x = Abt.fresh_var Term in
-  let xv = Abt.into (Abt.VAR x) in
-  let abs = Abt.into (Abt.VABS(x, xv)) in
-  Abt.into (Abt.VOP(Lam, Cons(unit_type, Cons(abs, Nil))))
+  let xv = Abt.into (Abt.Var x) in
+  let abs = Abt.into (Abt.Abs(x, xv)) in
+  Abt.into (Abt.Op(Lam, Cons(unit_type, Cons(abs, Nil))))
 
 let rec equal_types (ty1 : ty Abt.t) (ty2 : ty Abt.t) =
   match Abt.out ty1, Abt.out ty2 with
-  | VOP(Arrow, Cons(a, Cons(b, Nil))), VOP(Arrow, Cons(c, Cons(d, Nil))) ->
+  | Op(Arrow, Cons(a, Cons(b, Nil))), Op(Arrow, Cons(c, Cons(d, Nil))) ->
     equal_types a c && equal_types b d
-  | VOP(Arrow, Cons(_, Cons(_, Nil))), VOP(Unit, Nil) -> false
-  | VOP(Unit, Nil), VOP(Arrow, Cons(_, Cons(_, Nil))) -> false
-  | VOP(Unit, Nil), VOP(Unit, Nil) -> true
-  | VAR _, VOP _ -> false
-  | VOP _, VAR _ -> false
-  | VAR _, VAR _ -> failwith "Unreachable!"
+  | Op(Arrow, Cons(_, Cons(_, Nil))), Op(Unit, Nil) -> false
+  | Op(Unit, Nil), Op(Arrow, Cons(_, Cons(_, Nil))) -> false
+  | Op(Unit, Nil), Op(Unit, Nil) -> true
+  | Var _, Op _ -> false
+  | Op _, Var _ -> false
+  | Var _, Var _ -> failwith "Unreachable!"
 
 let () =
   assert (create_unit_id () = create_unit_id ());

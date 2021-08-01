@@ -56,9 +56,9 @@ module type S = sig
     | Cons : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
 
   type 'valence view =
-    | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
-    | VOP : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
-    | VAR : 'sort var -> 'sort view
+    | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
+    | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
+    | Var : 'sort var -> 'sort view
 
   val fresh_var : 'sort sort -> 'sort var
 

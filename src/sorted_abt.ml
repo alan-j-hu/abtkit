@@ -29,15 +29,15 @@ module type S = sig
     | Cons : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
 
   type 'valence view =
-    | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
-    | VOP : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
-    | VAR : 'sort var -> 'sort view
+    | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
+    | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
+    | Var : 'sort var -> 'sort view
 
   val fresh_var : 'sort sort -> 'sort var
 
-  val into : 'v view -> 'v t
+  val into : 'valence view -> 'valence t
 
-  val out : 'v t -> 'v view
+  val out : 'valence t -> 'valence view
 end
 
 let counter = ref 0
@@ -71,9 +71,9 @@ module Make(Sig : Signature) = struct
     | Cons : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
 
   type 'valence view =
-    | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
-    | VOP : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
-    | VAR : 'sort var -> 'sort view
+    | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
+    | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
+    | Var : 'sort var -> 'sort view
 
   type poly = { f : 'v 's . 's var -> 'v t -> 'v t }
 
@@ -95,9 +95,9 @@ module Make(Sig : Signature) = struct
       | OPER(ator, ands) -> OPER(ator, map_rands { f = bind } v ands)
 
   let into : type v . v view -> v t = function
-    | VABS(v, body) -> ABS(v.sort, bind v body)
-    | VOP(ator, ands) -> OPER(ator, ands)
-    | VAR v -> FV v
+    | Abs(v, body) -> ABS(v.sort, bind v body)
+    | Op(ator, ands) -> OPER(ator, ands)
+    | Var v -> FV v
 
   let rec unbind : type s v . s var -> v t -> v t =
     fun v t -> match t with
@@ -112,10 +112,10 @@ module Make(Sig : Signature) = struct
       | OPER(ator, ands) -> OPER(ator, map_rands { f = unbind } v ands)
 
   let out : type v . v t -> v view = function
-    | FV v -> VAR v
+    | FV v -> Var v
     | BV _ -> failwith "Unbound variable!"
     | ABS(sort, body) ->
       let v = fresh_var sort in
-      VABS(v, unbind v body)
-    | OPER(ator, ands) -> VOP(ator, ands)
+      Abs(v, unbind v body)
+    | OPER(ator, ands) -> Op(ator, ands)
 end
