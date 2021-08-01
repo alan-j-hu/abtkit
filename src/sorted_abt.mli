@@ -18,10 +18,10 @@ module type Signature = sig
       phantom type parameters, the first for the operator's arity and the second
       for the operator's sort.
 
-      The arity of an operator consists of a sequence of sorts {i s{_ 1 }, ...,
-      s{_ n } } describing the operator's parameters, and a sort {i s }
-      describing the sort that the operator belongs to. The arity usually takes
-      the form {i s{_ 1 } × ... × s{_ n } → s }.
+      The arity of an operator consists of a sequence of sorts {i s{_ 1}, ...,
+      s{_ n}} describing the operator's parameters, and the sort {i s} that the
+      operator belongs to. The arity usually takes the form {i s{_ 1 } × ... ×
+      s{_ n} → s}.
 
       The ['arity] type parameter is a sequence of arrow types, ['s1 -> 's2 ->
       ... -> 'sort]. The output type must be the sort type. An operator of zero
@@ -36,7 +36,9 @@ end
 (** Input signature of the functor {!Make}.
 
     A signature describes the symbols and syntax of some mathematical theory,
-    whether it be a logic, language, or algebraic structure. *)
+    whether it be a logic, language, or algebraic structure. It is not to be
+    confused with the "signatures" of the metalanguage (OCaml), which were
+    influenced by the same mathematical concepts. *)
 
 module type S = sig
   type 'sort sort
