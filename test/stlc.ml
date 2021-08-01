@@ -38,21 +38,21 @@ open Input
 let unit_type = Abt.into (Abt.Op(Unit, Nil))
 
 let unit_arr_unit =
-  Abt.into (Abt.Op(Arrow, Cons(unit_type, Cons(unit_type, Nil))))
+  Abt.into (Abt.Op(Arrow, [%hlist [unit_type; unit_type]]))
 
 let create_unit_id () =
   let x = Abt.fresh_var Term in
   let xv = Abt.into (Abt.Var x) in
   let abs = Abt.into (Abt.Abs(x, xv)) in
-  Abt.into (Abt.Op(Lam, Cons(unit_type, Cons(abs, Nil))))
+  Abt.into (Abt.Op(Lam, [%hlist [unit_type; abs]]))
 
 let rec equal_types (ty1 : ty Abt.t) (ty2 : ty Abt.t) =
   match Abt.out ty1, Abt.out ty2 with
-  | Op(Arrow, Cons(a, Cons(b, Nil))), Op(Arrow, Cons(c, Cons(d, Nil))) ->
+  | Op(Arrow, [%hlist? [a; b]]), Op(Arrow, [%hlist? [c; d]]) ->
     equal_types a c && equal_types b d
-  | Op(Arrow, Cons(_, Cons(_, Nil))), Op(Unit, Nil) -> false
-  | Op(Unit, Nil), Op(Arrow, Cons(_, Cons(_, Nil))) -> false
-  | Op(Unit, Nil), Op(Unit, Nil) -> true
+  | Op(Arrow, [%hlist? [_; _]]), Op(Unit, [%hlist? []]) -> false
+  | Op(Unit, [%hlist? []]), Op(Arrow, [%hlist? [_; _]]) -> false
+  | Op(Unit, [%hlist? []]), Op(Unit, [%hlist? []]) -> true
   | Var _, Op _ -> false
   | Op _, Var _ -> false
   | Var _, Var _ -> failwith "Unreachable!"
