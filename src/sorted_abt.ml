@@ -24,13 +24,13 @@ module type S = sig
 
   type 'valence t
 
-  type ('arity, 'sort) arity =
-    | Nil : ('sort, 'sort) arity
-    | Cons : 'valence t * ('a, 'sort) arity -> ('valence -> 'a, 'sort) arity
+  type ('arity, 'sort) operands =
+    | Nil : ('sort, 'sort) operands
+    | Cons : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
 
   type 'valence view =
     | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
-    | VOP : ('arity, 'sort) operator * ('arity, 'sort) arity -> 'sort view
+    | VOP : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
     | VAR : 'sort var -> 'sort view
 
   val fresh_var : 'sort sort -> 'sort var
@@ -64,21 +64,21 @@ module Make(Sig : Signature) = struct
     | FV : 'sort var -> 'sort t
     | BV : int * 'sort sort -> 'sort t
     | ABS : 'sort sort * 'valence t -> ('sort -> 'valence) t
-    | OPER : ('arity, 'sort) operator * ('arity, 'sort) arity -> 'sort t
+    | OPER : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort t
 
-  and ('arity, 'sort) arity =
-    | Nil : ('sort, 'sort) arity
-    | Cons : 'valence t * ('a, 'sort) arity -> ('valence -> 'a, 'sort) arity
+  and ('arity, 'sort) operands =
+    | Nil : ('sort, 'sort) operands
+    | Cons : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
 
   type 'valence view =
     | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
-    | VOP : ('arity, 'sort) operator * ('arity, 'sort) arity -> 'sort view
+    | VOP : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
     | VAR : 'sort var -> 'sort view
 
   type poly = { f : 'v 's . 's var -> 'v t -> 'v t }
 
   let rec map_rands
-    : type a s1 s2 . poly -> s1 var -> (a, s2) arity -> (a, s2) arity =
+    : type a s1 s2 . poly -> s1 var -> (a, s2) operands -> (a, s2) operands =
     fun poly v rands -> match rands with
       | Nil -> Nil
       | Cons(x, xs) -> Cons(poly.f v x, map_rands poly v xs)

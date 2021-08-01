@@ -51,20 +51,20 @@ module type S = sig
   (** An abstract binding tree (ABT). ['valence] is a phantom type parameter
       representing the valence of the ABT. *)
 
-  type ('arity, 'sort) arity =
-    | Nil : ('sort, 'sort) arity
-    | Cons : 'valence t * ('a, 'sort) arity -> ('valence -> 'a, 'sort) arity
+  type ('arity, 'sort) operands =
+    | Nil : ('sort, 'sort) operands
+    | Cons : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
 
   type 'valence view =
     | VABS : 'sort var * 'valence t -> ('sort -> 'valence) view
-    | VOP : ('arity, 'sort) operator * ('arity, 'sort) arity -> 'sort view
+    | VOP : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
     | VAR : 'sort var -> 'sort view
 
   val fresh_var : 'sort sort -> 'sort var
 
-  val into : 'v view -> 'v t
+  val into : 'valence view -> 'valence t
 
-  val out : 'v t -> 'v view
+  val out : 'valence t -> 'valence view
 end
 (** Output signature of the functor {!Make}. *)
 
