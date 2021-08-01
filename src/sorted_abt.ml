@@ -6,7 +6,7 @@
 
 type (_, _) eq = Refl : ('a, 'a) eq
 
-module type INPUT = sig
+module type Signature = sig
   type 'sort sort
 
   type ('arity, 'sort) operator
@@ -42,8 +42,8 @@ end
 
 let counter = ref 0
 
-module Make(M : INPUT) = struct
-  include M
+module Make(Sig : Signature) = struct
+  include Sig
 
   type 'sort var = {
     id : int;
