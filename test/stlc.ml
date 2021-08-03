@@ -38,21 +38,21 @@ open Stlc_sig
 let unit_type = Abt.into (Abt.Op(Unit, Nil))
 
 let unit_arr_unit =
-  Abt.into (Abt.Op(Arrow, [%hlist [unit_type; unit_type]]))
+  Abt.into (Abt.Op(Arrow, [%rands [unit_type; unit_type]]))
 
 let create_unit_id () =
   let x = Abt.fresh_var Term in
   let xv = Abt.into (Abt.Var x) in
   let abs = Abt.into (Abt.Abs(x, xv)) in
-  Abt.into (Abt.Op(Lam, [%hlist [unit_type; abs]]))
+  Abt.into (Abt.Op(Lam, [%rands [unit_type; abs]]))
 
 let rec equal_types (ty1 : ty Abt.t) (ty2 : ty Abt.t) =
   match Abt.out ty1, Abt.out ty2 with
-  | Op(Arrow, [%hlist? [a; b]]), Op(Arrow, [%hlist? [c; d]]) ->
+  | Op(Arrow, [%rands? [a; b]]), Op(Arrow, [%rands? [c; d]]) ->
     equal_types a c && equal_types b d
-  | Op(Arrow, [%hlist? [_; _]]), Op(Unit, [%hlist? []]) -> false
-  | Op(Unit, [%hlist? []]), Op(Arrow, [%hlist? [_; _]]) -> false
-  | Op(Unit, [%hlist? []]), Op(Unit, [%hlist? []]) -> true
+  | Op(Arrow, [%rands? [_; _]]), Op(Unit, [%rands? []]) -> false
+  | Op(Unit, [%rands? []]), Op(Arrow, [%rands? [_; _]]) -> false
+  | Op(Unit, [%rands? []]), Op(Unit, [%rands? []]) -> true
   | Var _, Op _ -> false
   | Op _, Var _ -> false
   | Var _, Var _ -> failwith "Unreachable!"

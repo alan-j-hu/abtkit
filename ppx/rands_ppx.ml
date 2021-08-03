@@ -8,7 +8,7 @@ open Ppxlib
 
 let ext_pat =
   Extension.V3.declare
-    "hlist"
+    "rands"
     Extension.Context.pattern
     Ast_pattern.(ppat __ none)
     begin fun ~ctxt:_ ->
@@ -24,7 +24,7 @@ let ext_pat =
 
 let ext_expr =
   Extension.V3.declare
-    "hlist"
+    "rands"
     Extension.Context.expression
     Ast_pattern.(single_expr_payload __)
     begin fun ~ctxt:_ ->
@@ -42,4 +42,4 @@ let () =
   Driver.register_transformation
     ~rules:[ Context_free.Rule.extension ext_expr
            ; Context_free.Rule.extension ext_pat ]
-    "hlist"
+    "rands_ppx"
