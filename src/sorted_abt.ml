@@ -13,6 +13,8 @@ module type Signature = sig
 
   val sort_eq
     : 'a sort -> 'b sort -> (('a, 'b) eq, ('a, 'b) eq -> 'any) Either.t
+
+  val pp_print_op : Format.formatter -> ('arity, 'sort) operator -> unit
 end
 
 module type S = sig
@@ -44,6 +46,8 @@ module type S = sig
   val into : 'valence view -> 'valence t
 
   val out : 'valence t -> 'valence view
+
+  val pp_print : Format.formatter -> 'valence t -> unit
 end
 
 let counter = ref 0
@@ -130,4 +134,35 @@ module Make(Sig : Signature) = struct
       let v = fresh_var sort in
       Abs(v, unbind v body)
     | Oper(ator, ands) -> Op(ator, ands)
+
+  let pp_print_var formatter var =
+    Format.pp_print_int formatter var.id
+
+  let rec pp_print : type s . Format.formatter -> s t -> unit =
+    fun formatter t ->
+    match t with
+    | Free var -> pp_print_var formatter var
+    | Bound(i, _) -> Format.pp_print_int formatter i
+    | Abstr(_, body) ->
+      Format.pp_print_char formatter '.';
+      pp_print formatter body
+    | Oper(ator, Nil) ->
+      pp_print_op formatter ator;
+      Format.pp_print_string formatter "()";
+    | Oper(ator, Cons(abt, ands)) ->
+      pp_print_op formatter ator;
+      Format.pp_print_char formatter '(';
+      pp_print formatter abt;
+      pp_print_operands formatter ands;
+      Format.pp_print_char formatter ')'
+
+  and pp_print_operands
+    : type a s . Format.formatter -> (a, s) operands -> unit =
+    fun formatter operands ->
+    match operands with
+    | Nil -> ()
+    | Cons(abt, next) ->
+      Format.pp_print_char formatter ';';
+      pp_print formatter abt;
+      pp_print_operands formatter next
 end

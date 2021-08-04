@@ -44,6 +44,8 @@ module type Signature = sig
   (** Decides the equality of two sorts. Iff the sorts are equal, it returns
       a proof that their types are equal. Iff the sorts are unequal, it
       returns a proof that their types are not equal. *)
+
+  val pp_print_op : Format.formatter -> ('arity, 'sort) operator -> unit
 end
 (** Input signature of the functor {!Make}.
 
@@ -100,6 +102,9 @@ module type S = sig
 
   val out : 'valence t -> 'valence view
   (** Views an ABT. *)
+
+  val pp_print : Format.formatter -> 'valence t -> unit
+  (** Pretty-prints an ABT. *)
 end
 (** Output signature of the functor {!Make}. *)
 

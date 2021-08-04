@@ -29,6 +29,16 @@ module Stlc_sig = struct
       | Term, Type -> Right (function _ -> .)
       | Type, Type -> Left Refl
       | Type, Term -> Right (function _ -> .)
+
+  let pp_print_op : type a s. Format.formatter -> (a, s) operator -> unit =
+    fun formatter op ->
+    Format.pp_print_string formatter begin match op with
+      | Unit -> "unit"
+      | Arrow -> "arrow"
+      | Ax -> "ax"
+      | App -> "app"
+      | Lam -> "lam"
+    end
 end
 
 module Abt = Sorted_abt.Make(Stlc_sig)
@@ -57,9 +67,18 @@ let rec equal_types (ty1 : ty Abt.t) (ty2 : ty Abt.t) =
   | Op _, Var _ -> false
   | Var _, Var _ -> failwith "Unreachable!"
 
+let string_of_abt abt =
+  let buf = Buffer.create 64 in
+  let fmt = Format.formatter_of_buffer buf in
+  Abt.pp_print fmt abt;
+  Format.pp_print_flush fmt ();
+  Buffer.contents buf
+
 let () =
   assert (create_unit_id () = create_unit_id ());
   assert (equal_types unit_type unit_type);
   assert (equal_types unit_arr_unit unit_arr_unit);
   assert (equal_types unit_arr_unit unit_type = false);
-  assert (equal_types unit_type unit_arr_unit = false)
+  assert (equal_types unit_type unit_arr_unit = false);
+  assert (string_of_abt unit_arr_unit = "arrow(unit();unit())");
+  assert (string_of_abt (create_unit_id ()) = "lam(unit();.0)")
