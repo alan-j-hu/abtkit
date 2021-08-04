@@ -67,10 +67,10 @@ module Make(Sig : Signature) = struct
       | _ -> None
 
   type 'valence t =
-    | FV : 'sort var -> 'sort t
-    | BV : int * 'sort sort -> 'sort t
-    | ABS : 'sort sort * 'valence t -> ('sort -> 'valence) t
-    | OPER : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort t
+    | Bound : int * 'sort sort -> 'sort t
+    | Free : 'sort var -> 'sort t
+    | Abstr : 'sort sort * 'valence t -> ('sort -> 'valence) t
+    | Oper : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort t
 
   and ('arity, 'sort) operands =
     | Nil : ('sort, 'sort) operands
@@ -91,20 +91,20 @@ module Make(Sig : Signature) = struct
 
   let rec bind : type s v . s var -> v t -> v t =
     fun v t -> match t with
-      | FV v' ->
+      | Free v' ->
         begin match var_eq v v' with
-          | Some Refl -> BV(0, v.sort)
-          | None -> FV v'
+          | Some Refl -> Bound(0, v.sort)
+          | None -> Free v'
         end
-      | BV(i, sort) -> BV(i + 1, sort)
-      | ABS(sort, body) -> ABS(sort, bind v body)
-      | OPER(ator, ands) -> OPER(ator, map_operands { f = bind } v ands)
+      | Bound(i, sort) -> Bound(i + 1, sort)
+      | Abstr(sort, body) -> Abstr(sort, bind v body)
+      | Oper(ator, ands) -> Oper(ator, map_operands { f = bind } v ands)
 
-  let abs v body = ABS(v.sort, bind v body)
+  let abs v body = Abstr(v.sort, bind v body)
 
-  let op ator ands = OPER(ator, ands)
+  let op ator ands = Oper(ator, ands)
 
-  let var v = FV v
+  let var v = Free v
 
   let into : type v . v view -> v t = function
     | Abs(v, body) -> abs v body
@@ -113,21 +113,21 @@ module Make(Sig : Signature) = struct
 
   let rec unbind : type s v . s var -> v t -> v t =
     fun v t -> match t with
-      | FV v' -> FV v'
-      | BV(0, sort) ->
+      | Free v' -> Free v'
+      | Bound(0, sort) ->
         begin match sort_eq v.sort sort with
-          | Left Refl -> FV v
+          | Left Refl -> Free v
           | Right _ -> failwith "Sort mismatch!"
         end
-      | BV(n, sort) -> BV(n - 1, sort)
-      | ABS(sort, body) -> ABS(sort, unbind v body)
-      | OPER(ator, ands) -> OPER(ator, map_operands { f = unbind } v ands)
+      | Bound(n, sort) -> Bound(n - 1, sort)
+      | Abstr(sort, body) -> Abstr(sort, unbind v body)
+      | Oper(ator, ands) -> Oper(ator, map_operands { f = unbind } v ands)
 
   let out : type v . v t -> v view = function
-    | FV v -> Var v
-    | BV _ -> failwith "Unbound variable!"
-    | ABS(sort, body) ->
+    | Free v -> Var v
+    | Bound _ -> failwith "Unbound variable!"
+    | Abstr(sort, body) ->
       let v = fresh_var sort in
       Abs(v, unbind v body)
-    | OPER(ator, ands) -> Op(ator, ands)
+    | Oper(ator, ands) -> Op(ator, ands)
 end
