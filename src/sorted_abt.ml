@@ -135,34 +135,38 @@ module Make(Sig : Signature) = struct
       Abs(v, unbind v body)
     | Oper(ator, ands) -> Op(ator, ands)
 
-  let pp_print_var formatter var =
-    Format.pp_print_int formatter var.id
+  let pp_print_var ppf var =
+    Format.pp_print_char ppf 'v';
+    Format.pp_print_int ppf var.id
 
   let rec pp_print : type s . Format.formatter -> s t -> unit =
-    fun formatter t ->
-    match t with
-    | Free var -> pp_print_var formatter var
-    | Bound(i, _) -> Format.pp_print_int formatter i
-    | Abstr(_, body) ->
-      Format.pp_print_char formatter '.';
-      pp_print formatter body
-    | Oper(ator, Nil) ->
-      pp_print_op formatter ator;
-      Format.pp_print_string formatter "()";
-    | Oper(ator, Cons(abt, ands)) ->
-      pp_print_op formatter ator;
-      Format.pp_print_char formatter '(';
-      pp_print formatter abt;
-      pp_print_operands formatter ands;
-      Format.pp_print_char formatter ')'
+    fun ppf t ->
+    match out t with
+    | Var var -> pp_print_var ppf var
+    | Abs(var, body) ->
+      Format.fprintf
+        ppf
+        "%a.%a"
+        pp_print_var var
+        pp_print body
+    | Op(ator, Nil) -> Format.fprintf ppf "%a()" pp_print_op ator
+    | Op(ator, Cons(abt, ands)) ->
+      Format.fprintf
+        ppf
+        "%a(@[<hv>%a%a)@]"
+        pp_print_op ator
+        pp_print abt
+        pp_print_operands ands
 
   and pp_print_operands
     : type a s . Format.formatter -> (a, s) operands -> unit =
-    fun formatter operands ->
+    fun ppf operands ->
     match operands with
     | Nil -> ()
     | Cons(abt, next) ->
-      Format.pp_print_char formatter ';';
-      pp_print formatter abt;
-      pp_print_operands formatter next
+      Format.fprintf
+        ppf
+        ";@,%a%a"
+        pp_print abt
+        pp_print_operands next
 end

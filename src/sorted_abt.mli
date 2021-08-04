@@ -46,6 +46,7 @@ module type Signature = sig
       returns a proof that their types are not equal. *)
 
   val pp_print_op : Format.formatter -> ('arity, 'sort) operator -> unit
+  (** Pretty-prints an operator. *)
 end
 (** Input signature of the functor {!Make}.
 
