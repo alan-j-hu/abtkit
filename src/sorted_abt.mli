@@ -20,12 +20,24 @@ module type Signature = sig
 
       The arity of an operator consists of a sequence of sorts {i s{_ 1}, ...,
       s{_ n}} describing the operator's parameters, and the sort {i s} that the
-      operator belongs to. The arity usually takes the form {i s{_ 1 } × ... ×
+      operator belongs to. The arity usually takes the form {i s{_ 1} × ... ×
       s{_ n} → s}.
 
-      The ['arity] type parameter is a sequence of arrow types, ['s1 -> 's2 ->
-      ... -> 'sort]. The output type must be the sort type. An operator of zero
-      arity should have type [('sort, 'sort) operator]. *)
+      Abstract binding trees record variables that are bound in the scope of a
+      term. Therefore, operands have a {i valence}, which lists the sorts of
+      the variables bound in the operand in addition to the sort of the operand
+      itself. The valence takes the form {i s{_ 1} × ... × s{_ k} → s}, where
+      {i s{_ 1}, ..., s{_ k}} are the sorts of the variables and {i s} is the
+      sort of the operand.
+
+      As a result, the arity for an operator of an abstract binding tree really
+      takes the form {i v{_ 1} × ... × v{_ n} → s} where each {i v{_ i}} is a
+      valence.
+
+      The ['arity] type parameter is a sequence of arrow types, ['v1 -> ... ->
+      'vn -> 'sort] where each ['vi] has the form ['s1 -> ... 'sk -> 's]. The
+      output type ['sort] must be the sort type of the operator. An operator of
+      arity zero has type [('sort, 'sort) operator]. *)
 
   val sort_eq
     : 'a sort -> 'b sort -> (('a, 'b) eq, ('a, 'b) eq -> 'any) Either.t
@@ -42,10 +54,13 @@ end
 
 module type S = sig
   type 'sort sort
+  (** An alias of {!Signature.sort}. *)
 
   type ('arity, 'sort) operator
+  (** An alias of {!Signature.operator}. *)
 
   type 'sort var
+  (** A variable annotated by its sort. *)
 
   type 'valence t
   (** An abstract binding tree (ABT). ['valence] is a phantom type parameter
@@ -53,18 +68,38 @@ module type S = sig
 
   type ('arity, 'sort) operands =
     | Nil : ('sort, 'sort) operands
+    (** An empty list of operands. *)
     | Cons : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
+    (** An operand followed by a list of operands. *)
+  (** A list of operands. *)
 
   type 'valence view =
     | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
+    (** An abstraction, which binds a variable within a term. *)
     | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
+    (** An operator applied to operands. *)
     | Var : 'sort var -> 'sort view
+    (** A variable. *)
+  (** A view of an ABT.*)
 
   val fresh_var : 'sort sort -> 'sort var
+  (** Generates a fresh variable of the sort. The variable is unique from any
+      other variable generated from the function. *)
+
+  val abs : 'sort var -> 'valence t -> ('sort -> 'valence) t
+  (** Constructs an abstraction ABT. *)
+
+  val op : ('arity, 'sort) operator -> ('arity, 'sort) operands -> 'sort t
+  (** Constructs an operation ABT. *)
+
+  val var : 'sort var -> 'sort t
+  (** Constructs a variable ABT. *)
 
   val into : 'valence view -> 'valence t
+  (** Constructs an ABT from a view. *)
 
   val out : 'valence t -> 'valence view
+  (** Views an ABT. *)
 end
 (** Output signature of the functor {!Make}. *)
 

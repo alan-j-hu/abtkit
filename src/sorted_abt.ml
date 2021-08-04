@@ -35,6 +35,12 @@ module type S = sig
 
   val fresh_var : 'sort sort -> 'sort var
 
+  val abs : 'sort var -> 'valence t -> ('sort -> 'valence) t
+
+  val op : ('arity, 'sort) operator -> ('arity, 'sort) operands -> 'sort t
+
+  val var : 'sort var -> 'sort t
+
   val into : 'valence view -> 'valence t
 
   val out : 'valence t -> 'valence view
@@ -94,10 +100,16 @@ module Make(Sig : Signature) = struct
       | ABS(sort, body) -> ABS(sort, bind v body)
       | OPER(ator, ands) -> OPER(ator, map_operands { f = bind } v ands)
 
+  let abs v body = ABS(v.sort, bind v body)
+
+  let op ator ands = OPER(ator, ands)
+
+  let var v = FV v
+
   let into : type v . v view -> v t = function
-    | Abs(v, body) -> ABS(v.sort, bind v body)
-    | Op(ator, ands) -> OPER(ator, ands)
-    | Var v -> FV v
+    | Abs(v, body) -> abs v body
+    | Op(ator, ands) -> op ator ands
+    | Var v -> var v
 
   let rec unbind : type s v . s var -> v t -> v t =
     fun v t -> match t with
