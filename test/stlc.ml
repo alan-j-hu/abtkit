@@ -80,5 +80,4 @@ let () =
       | Some Refl -> Some (create_unit_id ())
       | None -> None
   in
-  assert (
-    Abt.subst { subst_sort = Term; subst_run = subst } xv = create_unit_id ())
+  assert (Abt.subst Term { run = subst } xv = create_unit_id ())

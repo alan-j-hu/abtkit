@@ -35,10 +35,8 @@ module type S = sig
     | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
     | Var : 'sort var -> 'sort view
 
-  type 'sort1 subst = {
-    subst_sort : 'sort1 sort;
-    subst_run : 'sort2 . 'sort2 var -> 'sort1 t option
-  }
+  type 'sort1 subst = { run : 'sort2 . 'sort2 var -> 'sort1 t option }
+  [@@ocaml.unboxed]
 
   val fresh_var : 'sort sort -> 'sort var
 
@@ -54,7 +52,7 @@ module type S = sig
 
   val out : 'valence t -> 'valence view
 
-  val subst : 'valence subst -> 'valence t -> 'valence t
+  val subst : 'sort sort -> 'sort subst -> 'valence t -> 'valence t
 
   val pp_print : Format.formatter -> 'valence t -> unit
 end
@@ -94,10 +92,8 @@ module Make(Sig : Signature) = struct
     | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
     | Var : 'sort var -> 'sort view
 
-  type 'sort1 subst = {
-    subst_sort : 'sort1 sort;
-    subst_run : 'sort2 . 'sort2 var -> 'sort1 t option
-  }
+  type 'sort1 subst = { run : 'sort2 . 'sort2 var -> 'sort1 t option }
+  [@@ocaml.unboxed]
 
   type poly = { f : 'v . 'v t -> 'v t } [@@ocaml.unboxed]
 
@@ -151,21 +147,21 @@ module Make(Sig : Signature) = struct
       Abs(v, unbind v body)
     | Oper(ator, ands) -> Op(ator, ands)
 
-  let rec subst : type s1 s2 . s1 subst -> s2 t -> s2 t =
-    fun s abt -> match abt with
+  let rec subst : type s1 s2 . s1 sort -> s1 subst -> s2 t -> s2 t =
+    fun sort sub abt -> match abt with
       | Free var as abt ->
-        begin match sort_eq s.subst_sort var.sort with
+        begin match sort_eq sort var.sort with
           | Left Refl ->
-            begin match s.subst_run var with
+            begin match sub.run var with
               | Some abt -> abt
               | None -> abt
             end
           | Right _ -> abt
         end
       | Bound _ as abt -> abt
-      | Abstr(sort, body) -> Abstr(sort, subst s body)
+      | Abstr(sort', body) -> Abstr(sort', subst sort sub body)
       | Oper(ator, ands) ->
-        Oper(ator, map_operands { f = fun x -> subst s x } ands)
+        Oper(ator, map_operands { f = fun x -> subst sort sub x } ands)
 
   let pp_print_var ppf var =
     Format.pp_print_char ppf 'v';
