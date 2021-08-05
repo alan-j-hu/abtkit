@@ -75,9 +75,8 @@ let () =
   assert (equal_types unit_type unit_arr_unit = false);
   let x = Abt.fresh_var Term in
   let xv = Abt.into (Abt.Var x) in
-  let subst : type s . s Abt.var -> tm Abt.t option =
-    fun var -> match Abt.var_eq var x with
+  assert (Abt.subst Term (fun var ->
+      match Abt.var_eq var x with
       | Some Refl -> Some (create_unit_id ())
       | None -> None
-  in
-  assert (Abt.subst Term { run = subst } xv = create_unit_id ())
+    ) xv = create_unit_id ())
