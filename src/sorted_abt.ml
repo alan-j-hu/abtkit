@@ -4,55 +4,7 @@
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at https://mozilla.org/MPL/2.0/. *)
 
-type (_, _) eq = Refl : ('a, 'a) eq
-
-module type Signature = sig
-  type 'sort sort
-
-  type ('arity, 'sort) operator
-
-  val sort_eq
-    : 'a sort -> 'b sort -> (('a, 'b) eq, ('a, 'b) eq -> 'any) Either.t
-
-  val pp_print_op : Format.formatter -> ('arity, 'sort) operator -> unit
-end
-
-module type S = sig
-  type 'sort sort
-
-  type ('arity, 'sort) operator
-
-  type 'sort var
-
-  type 'valence t
-
-  type ('arity, 'sort) operands =
-    | [] : ('sort, 'sort) operands
-    | (::) : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
-
-  type 'valence view =
-    | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
-    | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
-    | Var : 'sort var -> 'sort view
-
-  val fresh_var : 'sort sort -> 'sort var
-
-  val var_eq : 'sort1 var -> 'sort2 var -> ('sort1, 'sort2) eq option
-
-  val abs : 'sort var -> 'valence t -> ('sort -> 'valence) t
-
-  val op : ('arity, 'sort) operator -> ('arity, 'sort) operands -> 'sort t
-
-  val var : 'sort var -> 'sort t
-
-  val into : 'valence view -> 'valence t
-
-  val out : 'valence t -> 'valence view
-
-  val subst : 'sort sort -> ('sort var -> 'sort t option) -> 'valence t -> 'valence t
-
-  val pp_print : Format.formatter -> 'valence t -> unit
-end
+include Intf
 
 let counter = ref 0
 
