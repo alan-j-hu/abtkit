@@ -35,6 +35,8 @@ module type S = sig
     | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
     | Var : 'sort var -> 'sort view
 
+  type subst = { run : 'sort . 'sort var -> 'sort t option } [@@ocaml.unbox]
+
   val fresh_var : 'sort sort -> 'sort var
 
   val abs : 'sort var -> 'valence t -> ('sort -> 'valence) t
@@ -46,6 +48,8 @@ module type S = sig
   val into : 'valence view -> 'valence t
 
   val out : 'valence t -> 'valence view
+
+  val subst : subst -> 'valence t -> 'valence t
 
   val pp_print : Format.formatter -> 'valence t -> unit
 end
@@ -85,13 +89,15 @@ module Make(Sig : Signature) = struct
     | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
     | Var : 'sort var -> 'sort view
 
-  type poly = { f : 'v 's . 's var -> 'v t -> 'v t } [@@ocaml.unboxed]
+  type subst = { run : 'sort . 'sort var -> 'sort t option } [@@ocaml.unbox]
+
+  type poly = { f : 'v . 'v t -> 'v t } [@@ocaml.unboxed]
 
   let rec map_operands
-    : type a s1 s2 . poly -> s1 var -> (a, s2) operands -> (a, s2) operands =
-    fun poly v operands -> match operands with
+    : type a s . poly -> (a, s) operands -> (a, s) operands =
+    fun poly operands -> match operands with
       | Nil -> Nil
-      | Cons(x, xs) -> Cons(poly.f v x, map_operands poly v xs)
+      | Cons(x, xs) -> Cons(poly.f x, map_operands poly xs)
 
   let rec bind : type s v . s var -> v t -> v t =
     fun v t -> match t with
@@ -102,7 +108,8 @@ module Make(Sig : Signature) = struct
         end
       | Bound(i, sort) -> Bound(i + 1, sort)
       | Abstr(sort, body) -> Abstr(sort, bind v body)
-      | Oper(ator, ands) -> Oper(ator, map_operands { f = bind } v ands)
+      | Oper(ator, ands) ->
+        Oper(ator, map_operands { f = fun x -> bind v x } ands)
 
   let abs v body = Abstr(v.sort, bind v body)
 
@@ -125,7 +132,8 @@ module Make(Sig : Signature) = struct
         end
       | Bound(n, sort) -> Bound(n - 1, sort)
       | Abstr(sort, body) -> Abstr(sort, unbind v body)
-      | Oper(ator, ands) -> Oper(ator, map_operands { f = unbind } v ands)
+      | Oper(ator, ands) ->
+        Oper(ator, map_operands { f = fun x -> unbind v x } ands)
 
   let out : type v . v t -> v view = function
     | Free v -> Var v
@@ -134,6 +142,18 @@ module Make(Sig : Signature) = struct
       let v = fresh_var sort in
       Abs(v, unbind v body)
     | Oper(ator, ands) -> Op(ator, ands)
+
+  let rec subst : type v . subst -> v t -> v t =
+    fun s abt -> match abt with
+      | Free var as abt ->
+        begin match s.run var with
+          | Some abt -> abt
+          | None -> abt
+        end
+      | Bound _ as abt -> abt
+      | Abstr(sort, body) -> Abstr(sort, subst s body)
+      | Oper(ator, ands) ->
+        Oper(ator, map_operands { f = fun x -> subst s x } ands)
 
   let pp_print_var ppf var =
     Format.pp_print_char ppf 'v';

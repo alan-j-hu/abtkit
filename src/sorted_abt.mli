@@ -85,6 +85,9 @@ module type S = sig
     (** A variable. *)
   (** A view of an ABT.*)
 
+  type subst = { run : 'sort . 'sort var -> 'sort t option } [@@ocaml.unbox]
+  (** A substitution is a partial map from variables to ABTs. *)
+
   val fresh_var : 'sort sort -> 'sort var
   (** Generates a fresh variable of the sort. The variable is unique from any
       other variable generated from the function. *)
@@ -103,6 +106,9 @@ module type S = sig
 
   val out : 'valence t -> 'valence view
   (** Views an ABT. *)
+
+  val subst : subst -> 'valence t -> 'valence t
+  (** Applies a substitution to the ABT. *)
 
   val pp_print : Format.formatter -> 'valence t -> unit
   (** Pretty-prints an ABT. *)
