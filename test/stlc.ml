@@ -62,7 +62,7 @@ let rec equal_types (ty1 : ty Abt.t) (ty2 : ty Abt.t) =
     equal_types a c && equal_types b d
   | Op(Arrow, Abt.[_; _]), Op(Unit, Abt.[]) -> false
   | Op(Unit, Abt.[]), Op(Arrow, Abt.[_; _]) -> false
-  | Op(Unit, Abt.[]), Op(Unit, Abt. []) -> true
+  | Op(Unit, Abt.[]), Op(Unit, Abt.[]) -> true
   | Var _, Op _ -> false
   | Op _, Var _ -> false
   | Var _, Var _ -> failwith "Unreachable!"
