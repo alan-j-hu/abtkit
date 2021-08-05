@@ -27,8 +27,8 @@ module type S = sig
   type 'valence t
 
   type ('arity, 'sort) operands =
-    | Nil : ('sort, 'sort) operands
-    | Cons : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
+    | [] : ('sort, 'sort) operands
+    | (::) : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
 
   type 'valence view =
     | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
@@ -86,8 +86,8 @@ module Make(Sig : Signature) = struct
     | Oper : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort t
 
   and ('arity, 'sort) operands =
-    | Nil : ('sort, 'sort) operands
-    | Cons : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
+    | [] : ('sort, 'sort) operands
+    | (::) : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
 
   type 'valence view =
     | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
@@ -104,8 +104,8 @@ module Make(Sig : Signature) = struct
   let rec map_operands
     : type a s . poly -> (a, s) operands -> (a, s) operands =
     fun poly operands -> match operands with
-      | Nil -> Nil
-      | Cons(x, xs) -> Cons(poly.f x, map_operands poly xs)
+      | [] -> []
+      | x :: xs -> poly.f x :: map_operands poly xs
 
   let rec bind : type s v . s var -> v t -> v t =
     fun v t -> match t with
@@ -181,8 +181,8 @@ module Make(Sig : Signature) = struct
         "%a.%a"
         pp_print_var var
         pp_print body
-    | Op(ator, Nil) -> Format.fprintf ppf "%a()" pp_print_op ator
-    | Op(ator, Cons(abt, ands)) ->
+    | Op(ator, []) -> Format.fprintf ppf "%a()" pp_print_op ator
+    | Op(ator, abt :: ands) ->
       Format.fprintf
         ppf
         "%a(@[<hv>%a%a)@]"
@@ -194,8 +194,8 @@ module Make(Sig : Signature) = struct
     : type a s . Format.formatter -> (a, s) operands -> unit =
     fun ppf operands ->
     match operands with
-    | Nil -> ()
-    | Cons(abt, next) ->
+    | [] -> ()
+    | abt :: next ->
       Format.fprintf
         ppf
         ";@,%a%a"

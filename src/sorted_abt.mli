@@ -70,9 +70,9 @@ module type S = sig
       representing the valence of the ABT. *)
 
   type ('arity, 'sort) operands =
-    | Nil : ('sort, 'sort) operands
+    | [] : ('sort, 'sort) operands
     (** An empty list of operands. *)
-    | Cons : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
+    | (::) : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
     (** An operand followed by a list of operands. *)
   (** A list of operands. *)
 

@@ -45,24 +45,24 @@ module Abt = Sorted_abt.Make(Stlc_sig)
 
 open Stlc_sig
 
-let unit_type = Abt.into (Abt.Op(Unit, Nil))
+let unit_type = Abt.into (Abt.Op(Unit, Abt.[]))
 
 let unit_arr_unit =
-  Abt.into (Abt.Op(Arrow, [%rands [unit_type; unit_type]]))
+  Abt.into (Abt.Op(Arrow, Abt.[unit_type; unit_type]))
 
 let create_unit_id () =
   let x = Abt.fresh_var Term in
   let xv = Abt.into (Abt.Var x) in
-  let abs = Abt.into (Abt.Abs(x, xv)) in
-  Abt.into (Abt.Op(Lam, [%rands [unit_type; abs]]))
+  let abstr = Abt.into (Abt.Abs(x, xv)) in
+  Abt.into (Abt.Op(Lam, Abt.[unit_type; abstr]))
 
 let rec equal_types (ty1 : ty Abt.t) (ty2 : ty Abt.t) =
   match Abt.out ty1, Abt.out ty2 with
-  | Op(Arrow, [%rands? [a; b]]), Op(Arrow, [%rands? [c; d]]) ->
+  | Op(Arrow, Abt.[a; b]), Op(Arrow, Abt.[c; d]) ->
     equal_types a c && equal_types b d
-  | Op(Arrow, [%rands? [_; _]]), Op(Unit, [%rands? []]) -> false
-  | Op(Unit, [%rands? []]), Op(Arrow, [%rands? [_; _]]) -> false
-  | Op(Unit, [%rands? []]), Op(Unit, [%rands? []]) -> true
+  | Op(Arrow, Abt.[_; _]), Op(Unit, Abt.[]) -> false
+  | Op(Unit, Abt.[]), Op(Arrow, Abt.[_; _]) -> false
+  | Op(Unit, Abt.[]), Op(Unit, Abt. []) -> true
   | Var _, Op _ -> false
   | Op _, Var _ -> false
   | Var _, Var _ -> failwith "Unreachable!"

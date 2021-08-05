@@ -1,4 +1,3 @@
 (tests
  (names stlc)
- (libraries sorted_abt sorted_abt_ppx)
- (preprocess (pps sorted_abt_ppx)))
+ (libraries sorted_abt))

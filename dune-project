@@ -12,10 +12,3 @@
  (description "Strongly-typed abstract binding trees ABTs.")
  (depends
   (ocaml (>= 4.12))))
-
-(package
- (name sorted-abt-ppx)
- (synopsis "Syntactic sugar for sorted-abt")
- (depends
-  (sorted-abt (= version))
-  (ppxlib (>= 0.22))))
