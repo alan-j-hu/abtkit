@@ -35,9 +35,14 @@ module type S = sig
     | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
     | Var : 'sort var -> 'sort view
 
-  type subst = { run : 'sort . 'sort var -> 'sort t option } [@@ocaml.unbox]
+  type 'sort1 subst = {
+    subst_sort : 'sort1 sort;
+    subst_run : 'sort2 . 'sort2 var -> 'sort1 t option
+  }
 
   val fresh_var : 'sort sort -> 'sort var
+
+  val var_eq : 'sort1 var -> 'sort2 var -> ('sort1, 'sort2) eq option
 
   val abs : 'sort var -> 'valence t -> ('sort -> 'valence) t
 
@@ -49,7 +54,7 @@ module type S = sig
 
   val out : 'valence t -> 'valence view
 
-  val subst : subst -> 'valence t -> 'valence t
+  val subst : 'valence subst -> 'valence t -> 'valence t
 
   val pp_print : Format.formatter -> 'valence t -> unit
 end
@@ -89,7 +94,10 @@ module Make(Sig : Signature) = struct
     | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
     | Var : 'sort var -> 'sort view
 
-  type subst = { run : 'sort . 'sort var -> 'sort t option } [@@ocaml.unbox]
+  type 'sort1 subst = {
+    subst_sort : 'sort1 sort;
+    subst_run : 'sort2 . 'sort2 var -> 'sort1 t option
+  }
 
   type poly = { f : 'v . 'v t -> 'v t } [@@ocaml.unboxed]
 
@@ -143,12 +151,16 @@ module Make(Sig : Signature) = struct
       Abs(v, unbind v body)
     | Oper(ator, ands) -> Op(ator, ands)
 
-  let rec subst : type v . subst -> v t -> v t =
+  let rec subst : type s1 s2 . s1 subst -> s2 t -> s2 t =
     fun s abt -> match abt with
       | Free var as abt ->
-        begin match s.run var with
-          | Some abt -> abt
-          | None -> abt
+        begin match sort_eq s.subst_sort var.sort with
+          | Left Refl ->
+            begin match s.subst_run var with
+              | Some abt -> abt
+              | None -> abt
+            end
+          | Right _ -> abt
         end
       | Bound _ as abt -> abt
       | Abstr(sort, body) -> Abstr(sort, subst s body)
