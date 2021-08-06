@@ -22,7 +22,7 @@ module Make(Sig : Signature) = struct
     { id; sort }
 
   let var_eq : type s1 s2 . s1 var -> s2 var -> (s1, s2) eq option =
-    fun v1 v2 -> match sort_eq v1.sort v2.sort with
+    fun v1 v2 -> match equal_sorts v1.sort v2.sort with
       | Left Refl when v1.id = v2.id -> Some Refl
       | _ -> None
 
@@ -76,7 +76,7 @@ module Make(Sig : Signature) = struct
     fun v t -> match t with
       | Free v' -> Free v'
       | Bound(0, sort) ->
-        begin match sort_eq v.sort sort with
+        begin match equal_sorts v.sort sort with
           | Left Refl -> Free v
           | Right _ -> failwith "Sort mismatch!"
         end
@@ -96,7 +96,7 @@ module Make(Sig : Signature) = struct
   let rec subst : type s1 s2 . s1 sort -> (s1 var -> s1 t option) -> s2 t -> s2 t =
     fun sort sub abt -> match abt with
       | Free var as abt ->
-        begin match sort_eq sort var.sort with
+        begin match equal_sorts sort var.sort with
           | Left Refl ->
             begin match sub var with
               | Some abt -> abt
@@ -108,6 +108,30 @@ module Make(Sig : Signature) = struct
       | Abstr(sort', body) -> Abstr(sort', subst sort sub body)
       | Oper(ator, ands) ->
         Oper(ator, map_operands { f = fun x -> subst sort sub x } ands)
+
+  let rec equal : type v . v t -> v t -> bool = fun t1 t2 ->
+    match t1, t2 with
+    | Free var1, Free var2 ->
+      begin match var_eq var1 var2 with
+        | Some Refl -> true
+        | None -> false
+      end
+    | Bound(var1, _), Bound(var2, _) -> var1 = var2
+    | Abstr(_, body1), Abstr(_, body2) -> equal body1 body2
+    | Oper(ator1, ands1), Oper(ator2, ands2) ->
+      begin match equal_ops ator1 ator2 with
+        | Some Refl -> equal_operands ands1 ands2
+        | None -> false
+      end
+    | _, _ -> false
+
+  and equal_operands
+    : type a s . (a, s) operands -> (a, s) operands -> bool =
+    fun ands1 ands2 -> match ands1, ands2 with
+      | [], [] -> true
+      | x :: xs, y :: ys -> equal x y && equal_operands xs ys
+      | [], _ :: _ -> false
+      | _ :: _, [] -> false
 
   let pp_print_var ppf var =
     Format.pp_print_char ppf 'v';

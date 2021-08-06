@@ -19,7 +19,7 @@ module Stlc_sig = struct
     | App : (tm -> tm -> tm, tm) operator
     | Lam : (ty -> (tm -> tm) -> tm, tm) operator
 
-  let sort_eq
+  let equal_sorts
     : type s1 s2 any
     . s1 sort
       -> s2 sort
@@ -29,6 +29,17 @@ module Stlc_sig = struct
       | Term, Type -> Right (function _ -> .)
       | Type, Type -> Left Refl
       | Type, Term -> Right (function _ -> .)
+
+  let equal_ops
+    : type a1 a2 s
+    . (a1, s) operator -> (a2, s) operator -> (a1, a2) Sorted_abt.eq option =
+    fun op1 op2 -> match op1, op2 with
+      | App, App -> Some Refl
+      | Arrow, Arrow -> Some Refl
+      | Ax, Ax -> Some Refl
+      | Lam, Lam -> Some Refl
+      | Unit, Unit -> Some Refl
+      | _, _ -> None
 
   let pp_print_op : type a s. Format.formatter -> (a, s) operator -> unit =
     fun ppf op ->
@@ -79,4 +90,5 @@ let () =
       match Abt.var_eq var x with
       | Some Refl -> Some (create_unit_id ())
       | None -> None
-    ) xv = create_unit_id ())
+    ) xv = create_unit_id ());
+  assert (Abt.equal (create_unit_id ()) (create_unit_id ()))

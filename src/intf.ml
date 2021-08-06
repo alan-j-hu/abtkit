@@ -39,11 +39,17 @@ module type Signature = sig
       output type ['sort] must be the sort type of the operator. An operator of
       arity zero has type [('sort, 'sort) operator]. *)
 
-  val sort_eq
+  val equal_sorts
     : 'a sort -> 'b sort -> (('a, 'b) eq, ('a, 'b) eq -> 'any) Either.t
-  (** Decides the equality of two sorts. Iff the sorts are equal, it returns
+  (** Decides the equality of two sorts. Iff the sorts are equal, returns
       a proof that their types are equal. Iff the sorts are unequal, it
       returns a proof that their types are not equal. *)
+
+  val equal_ops
+    : ('arity1, 'sort) operator -> ('arity2, 'sort) operator
+    -> ('arity1, 'arity2) eq option
+  (** Checks the equality of two operators from the same sort. Iff the
+      operators are equal, returns a proof that their equalities are equal. *)
 
   val pp_print_op : Format.formatter -> ('arity, 'sort) operator -> unit
   (** Pretty-prints an operator. *)
@@ -110,6 +116,15 @@ module type S = sig
 
   val subst : 'sort sort -> ('sort var -> 'sort t option) -> 'valence t -> 'valence t
   (** Applies a substitution to the ABT. *)
+
+  val equal : 'valence t -> 'valence t -> bool
+  (** Checks two ABTs for equality, which is alpha-equivalence.
+
+      Assuming that operators can be correctly checked for equality using
+      polymorphic equality [(=)], [(=)] can also be used on ABTs. However,
+      if operators can only be checked for equality using
+      {!Signature.equal_ops} and not polymorphic equality, then [equal]
+      should be used to compare ABTs. *)
 
   val pp_print : Format.formatter -> 'valence t -> unit
   (** Pretty-prints an ABT. *)
