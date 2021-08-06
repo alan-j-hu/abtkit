@@ -96,7 +96,7 @@ module type S = sig
       other variable generated from the function. *)
 
   val equal_vars : 'sort1 var -> 'sort2 var -> ('sort1, 'sort2) eq option
-  (** Compares two vars for equality. Iff the variables are equal, returns
+  (** Checks two variables for equality. Iff the variables are equal, returns
       [Some proof] that their sorts are the same. *)
 
   val abs : 'sort var -> 'valence t -> ('sort -> 'valence) t
