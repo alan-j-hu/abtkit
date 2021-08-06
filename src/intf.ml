@@ -54,7 +54,7 @@ module type Signature = sig
   val pp_print_op : Format.formatter -> ('arity, 'sort) operator -> unit
   (** Pretty-prints an operator. *)
 end
-(** Input signature of the functor {!Make}.
+(** Input signature of the functor {!module:Make}.
 
     A signature describes the symbols and syntax of some mathematical theory,
     whether it be a logic, language, or algebraic structure. It is not to be
@@ -63,10 +63,10 @@ end
 
 module type S = sig
   type 'sort sort
-  (** An alias of {!Signature.sort}. *)
+  (** An alias of {!type:Signature.sort}. *)
 
   type ('arity, 'sort) operator
-  (** An alias of {!Signature.operator}. *)
+  (** An alias of {!type:Signature.operator}. *)
 
   type 'sort var
   (** A variable annotated by its sort. *)
@@ -129,4 +129,4 @@ module type S = sig
   val pp_print : Format.formatter -> 'valence t -> unit
   (** Pretty-prints an ABT. *)
 end
-(** Output signature of the functor {!Make}. *)
+(** Output signature of the functor {!module:Make}. *)
