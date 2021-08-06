@@ -95,7 +95,7 @@ module type S = sig
   (** Generates a fresh variable of the sort. The variable is unique from any
       other variable generated from the function. *)
 
-  val var_eq : 'sort1 var -> 'sort2 var -> ('sort1, 'sort2) eq option
+  val equal_vars : 'sort1 var -> 'sort2 var -> ('sort1, 'sort2) eq option
   (** Compares two vars for equality. Iff the variables are equal, returns
       [Some proof] that their sorts are the same. *)
 

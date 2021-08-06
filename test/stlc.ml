@@ -87,7 +87,7 @@ let () =
   let x = Abt.fresh_var Term in
   let xv = Abt.into (Abt.Var x) in
   assert (Abt.subst Term (fun var ->
-      match Abt.var_eq var x with
+      match Abt.equal_vars var x with
       | Some Refl -> Some (create_unit_id ())
       | None -> None
     ) xv = create_unit_id ());

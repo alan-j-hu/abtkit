@@ -21,7 +21,7 @@ module Make(Sig : Signature) = struct
     counter := id + 1;
     { id; sort }
 
-  let var_eq : type s1 s2 . s1 var -> s2 var -> (s1, s2) eq option =
+  let equal_vars : type s1 s2 . s1 var -> s2 var -> (s1, s2) eq option =
     fun v1 v2 -> match equal_sorts v1.sort v2.sort with
       | Left Refl when v1.id = v2.id -> Some Refl
       | _ -> None
@@ -52,7 +52,7 @@ module Make(Sig : Signature) = struct
   let rec bind : type s v . s var -> v t -> v t =
     fun v t -> match t with
       | Free v' ->
-        begin match var_eq v v' with
+        begin match equal_vars v v' with
           | Some Refl -> Bound(0, v.sort)
           | None -> Free v'
         end
@@ -112,7 +112,7 @@ module Make(Sig : Signature) = struct
   let rec equal : type v . v t -> v t -> bool = fun t1 t2 ->
     match t1, t2 with
     | Free var1, Free var2 ->
-      begin match var_eq var1 var2 with
+      begin match equal_vars var1 var2 with
         | Some Refl -> true
         | None -> false
       end
