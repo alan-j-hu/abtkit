@@ -41,7 +41,7 @@ module Make(Sig : Signature) = struct
     | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
     | Var : 'sort var -> 'sort view
 
-  type poly = { f : 'v . 'v t -> 'v t } [@@ocaml.unboxed]
+  type poly = { f : 'v. 'v t -> 'v t } [@@ocaml.unboxed]
 
   let rec map_operands
     : type a s. poly -> (a, s) operands -> (a, s) operands =
@@ -54,7 +54,7 @@ module Make(Sig : Signature) = struct
       | Free v' ->
         begin match equal_vars v v' with
           | Some Refl -> Bound(0, v.sort)
-          | None -> Free v'
+          | None -> t
         end
       | Bound(i, sort) -> Bound(i + 1, sort)
       | Abstr(sort, body) -> Abstr(sort, bind v body)
@@ -74,7 +74,7 @@ module Make(Sig : Signature) = struct
 
   let rec unbind : type s v. s var -> v t -> v t =
     fun v t -> match t with
-      | Free v' -> Free v'
+      | Free _ -> t
       | Bound(0, sort) ->
         begin match equal_sorts v.sort sort with
           | Left Refl -> Free v

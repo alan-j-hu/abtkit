@@ -78,6 +78,14 @@ let rec equal_types (ty1 : ty Abt.t) (ty2 : ty Abt.t) =
   | Op _, Var _ -> false
   | Var _, Var _ -> failwith "Unreachable!"
 
+let to_string margin term =
+  let buf = Buffer.create 32 in
+  let ppf = Format.formatter_of_buffer buf in
+  Format.pp_set_margin ppf margin;
+  Abt.pp_print ppf term;
+  Format.pp_print_flush ppf ();
+  Buffer.contents buf
+
 let () =
   assert (create_unit_id () = create_unit_id ());
   assert (equal_types unit_type unit_type);
@@ -91,4 +99,6 @@ let () =
       | Some Refl -> Some (create_unit_id ())
       | None -> None
     ) xv = create_unit_id ());
-  assert (Abt.equal (create_unit_id ()) (create_unit_id ()))
+  assert (Abt.equal (create_unit_id ()) (create_unit_id ()));
+  assert (to_string 78 unit_arr_unit = "arrow(unit();unit())");
+  assert (to_string 16 unit_arr_unit = "arrow(unit();\n      unit())")
