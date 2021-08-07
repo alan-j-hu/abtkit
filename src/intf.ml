@@ -42,6 +42,9 @@ module type Signature = sig
       The output type ['sort] must be the sort type of the operator. An
       operator of arity zero has type [('sort out, 'sort) operator]. *)
 
+  type name
+  (** The human-readable name of variables. *)
+
   val equal_sorts
     : 'a sort -> 'b sort -> (('a, 'b) eq, ('a, 'b) eq -> 'any) Either.t
   (** Decides the equality of two sorts. Iff the sorts are equal, returns
@@ -56,6 +59,9 @@ module type Signature = sig
 
   val pp_print_op : Format.formatter -> ('arity, 'sort) operator -> unit
   (** Pretty-prints an operator. *)
+
+  val pp_print_name : Format.formatter -> name -> unit
+  (** Pretty-prints a name. *)
 end
 (** Input signature of the functor {!module:Make}.
 
@@ -70,6 +76,9 @@ module type S = sig
 
   type ('arity, 'sort) operator
   (** An alias of {!type:Signature.operator}. *)
+
+  type name
+  (** An alias of {!type:Signature.name}. *)
 
   type 'sort var
   (** A variable annotated by its sort. *)
@@ -94,9 +103,9 @@ module type S = sig
     (** A variable. *)
   (** A view of an ABT.*)
 
-  val fresh_var : 'sort sort -> 'sort var
-  (** Generates a fresh variable of the sort. The variable is unique from any
-      other variable generated from the function. *)
+  val fresh_var : 'sort sort -> name -> 'sort var
+  (** Generates a fresh variable of the given sort. The variable is unique from
+      any other variable generated from the function. *)
 
   val equal_vars : 'sort1 var -> 'sort2 var -> ('sort1, 'sort2) eq option
   (** Checks two variables for equality. Iff the variables are equal, returns
@@ -121,13 +130,7 @@ module type S = sig
   (** Applies a substitution to the ABT. *)
 
   val equal : 'valence t -> 'valence t -> bool
-  (** Checks two ABTs for equality, which is alpha-equivalence.
-
-      Assuming that operators can be correctly checked for equality using
-      polymorphic equality [(=)], [(=)] can also be used on ABTs. However,
-      if operators can only be checked for equality using
-      {!Signature.equal_ops} and not polymorphic equality, then [equal]
-      should be used to compare ABTs. *)
+  (** Checks two ABTs for alpha-equivalence. *)
 
   val pp_print : Format.formatter -> 'valence t -> unit
   (** Pretty-prints an ABT. *)

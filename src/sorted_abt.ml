@@ -13,13 +13,14 @@ module Make(Sig : Signature) = struct
 
   type 'sort var = {
     id : int;
+    name : name;
     sort : 'sort sort;
   }
 
-  let fresh_var sort =
+  let fresh_var sort name =
     let id = !counter in
     counter := id + 1;
-    { id; sort }
+    { id; name; sort }
 
   let equal_vars : type s1 s2 . s1 var -> s2 var -> (s1, s2) eq option =
     fun v1 v2 -> match equal_sorts v1.sort v2.sort with
@@ -29,7 +30,7 @@ module Make(Sig : Signature) = struct
   type 'valence t =
     | Bound : int * 'sort sort -> 'sort t
     | Free : 'sort var -> 'sort t
-    | Abstr : 'sort sort * 'valence t -> ('sort -> 'valence) t
+    | Abstr : name * 'sort sort * 'valence t -> ('sort -> 'valence) t
     | Oper : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort t
 
   and ('arity, 'sort) operands =
@@ -57,11 +58,11 @@ module Make(Sig : Signature) = struct
           | None -> t
         end
       | Bound(i, sort) -> Bound(i + 1, sort)
-      | Abstr(sort, body) -> Abstr(sort, bind v body)
+      | Abstr(name, sort, body) -> Abstr(name, sort, bind v body)
       | Oper(ator, ands) ->
         Oper(ator, map_operands { f = fun x -> bind v x } ands)
 
-  let abs v body = Abstr(v.sort, bind v body)
+  let abs v body = Abstr(v.name, v.sort, bind v body)
 
   let op ator ands = Oper(ator, ands)
 
@@ -78,18 +79,18 @@ module Make(Sig : Signature) = struct
       | Bound(0, sort) ->
         begin match equal_sorts v.sort sort with
           | Left Refl -> Free v
-          | Right _ -> failwith "Sort mismatch!"
+          | Right _ -> failwith "unbind: Sort mismatch!"
         end
       | Bound(n, sort) -> Bound(n - 1, sort)
-      | Abstr(sort, body) -> Abstr(sort, unbind v body)
+      | Abstr(name, sort, body) -> Abstr(name, sort, unbind v body)
       | Oper(ator, ands) ->
         Oper(ator, map_operands { f = fun x -> unbind v x } ands)
 
   let out : type v. v t -> v view = function
     | Free v -> Var v
-    | Bound _ -> failwith "Unbound variable!"
-    | Abstr(sort, body) ->
-      let v = fresh_var sort in
+    | Bound _ -> failwith "out: Unbound variable!"
+    | Abstr(name, sort, body) ->
+      let v = fresh_var sort name in
       Abs(v, unbind v body)
     | Oper(ator, ands) -> Op(ator, ands)
 
@@ -105,7 +106,7 @@ module Make(Sig : Signature) = struct
           | Right _ -> abt
         end
       | Bound _ as abt -> abt
-      | Abstr(sort', body) -> Abstr(sort', subst sort sub body)
+      | Abstr(name, sort', body) -> Abstr(name, sort', subst sort sub body)
       | Oper(ator, ands) ->
         Oper(ator, map_operands { f = fun x -> subst sort sub x } ands)
 
@@ -117,7 +118,7 @@ module Make(Sig : Signature) = struct
         | None -> false
       end
     | Bound(var1, _), Bound(var2, _) -> var1 = var2
-    | Abstr(_, body1), Abstr(_, body2) -> equal body1 body2
+    | Abstr(_, _, body1), Abstr(_, _, body2) -> equal body1 body2
     | Oper(ator1, ands1), Oper(ator2, ands2) ->
       begin match equal_ops ator1 ator2 with
         | Some Refl -> equal_operands ands1 ands2
@@ -132,8 +133,7 @@ module Make(Sig : Signature) = struct
       | x :: xs, y :: ys -> equal x y && equal_operands xs ys
 
   let pp_print_var ppf var =
-    Format.pp_print_char ppf 'v';
-    Format.pp_print_int ppf var.id
+    pp_print_name ppf var.name
 
   let rec pp_print : type s. Format.formatter -> s t -> unit =
     fun ppf t ->

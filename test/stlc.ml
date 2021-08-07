@@ -19,6 +19,8 @@ module Stlc_sig = struct
     | App : (tm -> tm -> tm Sorted_abt.out, tm) operator
     | Lam : (ty -> (tm -> tm) -> tm Sorted_abt.out, tm) operator
 
+  type name = string
+
   let equal_sorts
     : type s1 s2 any.
       s1 sort
@@ -50,6 +52,8 @@ module Stlc_sig = struct
       | App -> "app"
       | Lam -> "lam"
     end
+
+  let pp_print_name = Format.pp_print_string
 end
 
 module Abt = Sorted_abt.Make(Stlc_sig)
@@ -62,7 +66,7 @@ let unit_arr_unit =
   Abt.into (Abt.Op(Arrow, Abt.[unit_type; unit_type]))
 
 let create_unit_id () =
-  let x = Abt.fresh_var Term in
+  let x = Abt.fresh_var Term "x" in
   let xv = Abt.into (Abt.Var x) in
   let abstr = Abt.into (Abt.Abs(x, xv)) in
   Abt.into (Abt.Op(Lam, Abt.[unit_type; abstr]))
@@ -92,7 +96,7 @@ let () =
   assert (equal_types unit_arr_unit unit_arr_unit);
   assert (equal_types unit_arr_unit unit_type = false);
   assert (equal_types unit_type unit_arr_unit = false);
-  let x = Abt.fresh_var Term in
+  let x = Abt.fresh_var Term "x" in
   let xv = Abt.into (Abt.Var x) in
   assert (Abt.subst Term (fun var ->
       match Abt.equal_vars var x with
@@ -101,4 +105,5 @@ let () =
     ) xv = create_unit_id ());
   assert (Abt.equal (create_unit_id ()) (create_unit_id ()));
   assert (to_string 78 unit_arr_unit = "arrow(unit();unit())");
-  assert (to_string 16 unit_arr_unit = "arrow(unit();\n      unit())")
+  assert (to_string 16 unit_arr_unit = "arrow(unit();\n      unit())");
+  assert (to_string 78 (create_unit_id ()) = "lam(unit();x.x)")
