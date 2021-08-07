@@ -8,6 +8,9 @@ type (_, _) eq =
   | Refl : ('a, 'a) eq (** Proof that ['a] and ['a] are equal. *)
 (** [('a, 'b) eq] is the proposition that ['a] and ['b] are equal. *)
 
+type 'a out = Out of 'a [@@ocaml.unbox]
+(** A helper type for annotating the type of {!constructor:S.operands.([])}. *)
+
 module type Signature = sig
   type 'sort sort
   (** A sort is the syntactic class that an operator belongs to. The type
@@ -35,9 +38,9 @@ module type Signature = sig
       valence.
 
       The ['arity] type parameter is a sequence of arrow types, ['v1 -> ... ->
-      'vn -> 'sort] where each ['vi] has the form ['s1 -> ... 'sk -> 's]. The
-      output type ['sort] must be the sort type of the operator. An operator of
-      arity zero has type [('sort, 'sort) operator]. *)
+      'vn -> 'sort out] where each ['vi] has the form ['s1 -> ... 'sk -> 's].
+      The output type ['sort] must be the sort type of the operator. An
+      operator of arity zero has type [('sort out, 'sort) operator]. *)
 
   val equal_sorts
     : 'a sort -> 'b sort -> (('a, 'b) eq, ('a, 'b) eq -> 'any) Either.t
@@ -76,7 +79,7 @@ module type S = sig
       representing the valence of the ABT. *)
 
   type ('arity, 'sort) operands =
-    | [] : ('sort, 'sort) operands
+    | [] : ('sort out, 'sort) operands
     (** An empty list of operands. *)
     | (::) : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
     (** An operand followed by a list of operands. *)

@@ -13,15 +13,15 @@ module Stlc_sig = struct
     | Type : ty sort
 
   type ('arity, 'sort) operator =
-    | Unit : (ty, ty) operator
-    | Arrow : (ty -> ty -> ty, ty) operator
-    | Ax : (tm, tm) operator
-    | App : (tm -> tm -> tm, tm) operator
-    | Lam : (ty -> (tm -> tm) -> tm, tm) operator
+    | Unit : (ty Sorted_abt.out, ty) operator
+    | Arrow : (ty -> ty -> ty Sorted_abt.out, ty) operator
+    | Ax : (tm Sorted_abt.out, tm) operator
+    | App : (tm -> tm -> tm Sorted_abt.out, tm) operator
+    | Lam : (ty -> (tm -> tm) -> tm Sorted_abt.out, tm) operator
 
   let equal_sorts
-    : type s1 s2 any
-    . s1 sort
+    : type s1 s2 any.
+      s1 sort
       -> s2 sort
       -> ((s1, s2) Sorted_abt.eq, (s1, s2) Sorted_abt.eq -> any) Either.t =
     fun s1 s2 -> match s1, s2 with
@@ -31,8 +31,8 @@ module Stlc_sig = struct
       | Type, Term -> Right (function _ -> .)
 
   let equal_ops
-    : type a1 a2 s
-    . (a1, s) operator -> (a2, s) operator -> (a1, a2) Sorted_abt.eq option =
+    : type a1 a2 s.
+      (a1, s) operator -> (a2, s) operator -> (a1, a2) Sorted_abt.eq option =
     fun op1 op2 -> match op1, op2 with
       | App, App -> Some Refl
       | Arrow, Arrow -> Some Refl
