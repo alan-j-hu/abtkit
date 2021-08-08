@@ -49,10 +49,21 @@ GADT that contains their sorts and arities.
 {[
   type ('arity, 'sort) operator =
     | Unit : (ty Sorted_abt.out, ty) operator
-    | Arrow : (ty -> ty -> ty Sorted_abt.out, ty) operator
+    | Arrow : (ty Sorted_abt.out -> ty Sorted_abt.out -> ty Sorted_abt.out, ty) operator
     | Ax : (tm Sorted_abt.out, tm) operator
-    | App : (tm -> tm -> tm Sorted_abt.out, tm) operator
-    | Lam : (ty -> (tm -> tm) -> tm Sorted_abt.out, tm) operator
+    | App : (tm Sorted_abt.out -> tm Sorted_abt.out -> tm Sorted_abt.out, tm) operator
+    | Lam : (ty Sorted_abt.out -> (tm -> tm Sorted_abt.out) -> tm Sorted_abt.out, tm) operator
+
+  let equal_sorts
+    : type s1 s2 any.
+      s1 sort
+      -> s2 sort
+      -> ((s1, s2) Sorted_abt.eq, (s1, s2) Sorted_abt.eq -> any) Either.t =
+    fun s1 s2 -> match s1, s2 with
+      | Term, Term -> Left Refl
+      | Term, Type -> Right (function _ -> .)
+      | Type, Type -> Left Refl
+      | Type, Term -> Right (function _ -> .)
 
   let equal_ops
     : type a1 a2 s.
@@ -110,18 +121,15 @@ let ( let* ) = Result.bind
 This is a function that performs type inference:
 {[
 let rec infer
-    (gamma : (tm Abt.var * ty Abt.t) list) (term : tm Abt.t)
-  : (ty Abt.t, unit) result =
+    (gamma : (tm Abt.var * ty Sorted_abt.out Abt.t) list)
+    (term : tm Sorted_abt.out Abt.t)
+  : (ty Sorted_abt.out Abt.t, unit) result =
   match Abt.out term with
   | Op(Ax, Abt.[]) -> Ok (Abt.into (Op(Unit, Abt.[])))
   | Op(Lam, Abt.[in_ty; body]) ->
-    begin match Abt.out body with
-      | Abs(var, body) ->
-        let+ out_ty = infer ((var, in_ty) :: gamma) body in
-        Abt.into (Op(Arrow, Abt.[in_ty; out_ty]))
-      | Op _ -> .
-      | Var _ -> failwith ""
-    end
+    let Abs(var, body) = Abt.out body in
+    let+ out_ty = infer ((var, in_ty) :: gamma) body in
+    Abt.into (Op(Arrow, Abt.[in_ty; out_ty]))
   | Op(App, Abt.[f; arg]) ->
     let* f_ty = infer gamma f
     and* arg_ty = infer gamma arg in
@@ -138,7 +146,7 @@ let rec infer
     | Some ty -> Ok ty
     | None -> Error ()
 
-let has_ty (term : tm Abt.t) (ty : ty Abt.t) =
+let has_ty (term : tm Sorted_abt.out Abt.t) (ty : ty Sorted_abt.out Abt.t) =
   match infer [] term with
   | Ok ty' -> Abt.equal ty ty'
   | Error _ -> false

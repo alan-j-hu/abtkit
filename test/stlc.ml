@@ -14,12 +14,10 @@ module STLCSig = struct
 
   type ('arity, 'sort) operator =
     | Unit : (ty Sorted_abt.out, ty) operator
-    | Arrow : (ty -> ty -> ty Sorted_abt.out, ty) operator
+    | Arrow : (ty Sorted_abt.out -> ty Sorted_abt.out -> ty Sorted_abt.out, ty) operator
     | Ax : (tm Sorted_abt.out, tm) operator
-    | App : (tm -> tm -> tm Sorted_abt.out, tm) operator
-    | Lam : (ty -> (tm -> tm) -> tm Sorted_abt.out, tm) operator
-
-  type name = string
+    | App : (tm Sorted_abt.out -> tm Sorted_abt.out -> tm Sorted_abt.out, tm) operator
+    | Lam : (ty Sorted_abt.out -> (tm -> tm Sorted_abt.out) -> tm Sorted_abt.out, tm) operator
 
   let equal_sorts
     : type s1 s2 any.
@@ -53,6 +51,8 @@ module STLCSig = struct
       | Lam -> "lam"
     end
 
+  type name = string
+
   let pp_print_name = Format.pp_print_string
 end
 
@@ -73,19 +73,15 @@ let ( and* ) = ( and+ )
 let ( let* ) = Result.bind
 
 let rec infer
-    (gamma : (tm Abt.var * ty Abt.t) list)
-    (term : tm Abt.t)
-  : (ty Abt.t, unit) result =
+    (gamma : (tm Abt.var * ty Sorted_abt.out Abt.t) list)
+    (term : tm Sorted_abt.out Abt.t)
+  : (ty Sorted_abt.out Abt.t, unit) result =
   match Abt.out term with
   | Op(Ax, Abt.[]) -> Ok (Abt.into (Op(Unit, Abt.[])))
   | Op(Lam, Abt.[in_ty; body]) ->
-    begin match Abt.out body with
-      | Abs(var, body) ->
-        let+ out_ty = infer ((var, in_ty) :: gamma) body in
-        Abt.into (Op(Arrow, Abt.[in_ty; out_ty]))
-      | Op _ -> .
-      | Var _ -> failwith ""
-    end
+    let Abs(var, body) = Abt.out body in
+    let+ out_ty = infer ((var, in_ty) :: gamma) body in
+    Abt.into (Op(Arrow, Abt.[in_ty; out_ty]))
   | Op(App, Abt.[f; arg]) ->
     let* f_ty = infer gamma f
     and* arg_ty = infer gamma arg in
@@ -102,7 +98,7 @@ let rec infer
     | Some ty -> Ok ty
     | None -> Error ()
 
-let has_ty (term : tm Abt.t) (ty : ty Abt.t) =
+let has_ty (term : tm Sorted_abt.out Abt.t) (ty : ty Sorted_abt.out Abt.t) =
   match infer [] term with
   | Ok ty' -> Abt.equal ty ty'
   | Error _ -> false
@@ -118,7 +114,7 @@ let create_unit_id () =
   let abstr = Abt.into (Abt.Abs(x, xv)) in
   Abt.into (Abt.Op(Lam, Abt.[unit_type; abstr]))
 
-let rec equal_types (ty1 : ty Abt.t) (ty2 : ty Abt.t) =
+let rec equal_types (ty1 : ty Sorted_abt.out Abt.t) (ty2 : ty Sorted_abt.out Abt.t) =
   match Abt.out ty1, Abt.out ty2 with
   | Op(Arrow, Abt.[a; b]), Op(Arrow, Abt.[c; d]) ->
     equal_types a c && equal_types b d

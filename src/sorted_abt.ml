@@ -28,10 +28,10 @@ module Make(Sig : Signature) = struct
       | _ -> None
 
   type 'valence t =
-    | Bound : int * 'sort sort -> 'sort t
-    | Free : 'sort var -> 'sort t
+    | Bound : int * 'sort sort -> 'sort out t
+    | Free : 'sort var -> 'sort out t
     | Abstr : name * 'sort sort * 'valence t -> ('sort -> 'valence) t
-    | Oper : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort t
+    | Oper : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort out t
 
   and ('arity, 'sort) operands =
     | [] : ('sort out, 'sort) operands
@@ -39,8 +39,8 @@ module Make(Sig : Signature) = struct
 
   type 'valence view =
     | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
-    | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
-    | Var : 'sort var -> 'sort view
+    | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort out view
+    | Var : 'sort var -> 'sort out view
 
   type poly = { f : 'v. 'v t -> 'v t } [@@ocaml.unboxed]
 
@@ -94,7 +94,7 @@ module Make(Sig : Signature) = struct
       Abs(v, unbind v body)
     | Oper(ator, ands) -> Op(ator, ands)
 
-  let rec subst : type s1 s2. s1 sort -> (s1 var -> s1 t option) -> s2 t -> s2 t =
+  let rec subst : type s1 s2. s1 sort -> (s1 var -> s1 out t option) -> s2 t -> s2 t =
     fun sort sub abt -> match abt with
       | Free var as abt ->
         begin match equal_sorts sort var.sort with

@@ -38,8 +38,8 @@ module type Signature = sig
       valence.
 
       The ['arity] type parameter is a sequence of arrow types, ['v1 -> ... ->
-      'vn -> 'sort out] where each ['vi] has the form ['s1 -> ... 'sk -> 's].
-      The output type ['sort] must be the sort type of the operator. An
+      'vn -> 'sort out] where each ['vi] has the form ['s1 -> ... 'sk ->
+      's out]. The output type ['sort] must be the sort type of the operator. An
       operator of arity zero has type [('sort out, 'sort) operator]. *)
 
   type name
@@ -97,9 +97,9 @@ module type S = sig
   type 'valence view =
     | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
     (** An abstraction, which binds a variable within a term. *)
-    | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort view
+    | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort out view
     (** An operator applied to operands. *)
-    | Var : 'sort var -> 'sort view
+    | Var : 'sort var -> 'sort out view
     (** A variable. *)
   (** A view of an ABT.*)
 
@@ -114,10 +114,10 @@ module type S = sig
   val abs : 'sort var -> 'valence t -> ('sort -> 'valence) t
   (** Constructs an abstraction ABT. *)
 
-  val op : ('arity, 'sort) operator -> ('arity, 'sort) operands -> 'sort t
+  val op : ('arity, 'sort) operator -> ('arity, 'sort) operands -> 'sort out t
   (** Constructs an operation ABT. *)
 
-  val var : 'sort var -> 'sort t
+  val var : 'sort var -> 'sort out t
   (** Constructs a variable ABT. *)
 
   val into : 'valence view -> 'valence t
@@ -126,7 +126,7 @@ module type S = sig
   val out : 'valence t -> 'valence view
   (** Views an ABT. *)
 
-  val subst : 'sort sort -> ('sort var -> 'sort t option) -> 'valence t -> 'valence t
+  val subst : 'sort sort -> ('sort var -> 'sort out t option) -> 'valence t -> 'valence t
   (** Applies a substitution to the ABT. *)
 
   val equal : 'valence t -> 'valence t -> bool
