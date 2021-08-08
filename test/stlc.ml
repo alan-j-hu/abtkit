@@ -4,7 +4,7 @@
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at https://mozilla.org/MPL/2.0/. *)
 
-module Stlc_sig = struct
+module STLCSig = struct
   type ty = Ty
   type tm = Tm
 
@@ -56,9 +56,56 @@ module Stlc_sig = struct
   let pp_print_name = Format.pp_print_string
 end
 
-module Abt = Sorted_abt.Make(Stlc_sig)
+module Abt = Sorted_abt.Make(STLCSig)
 
-open Stlc_sig
+open STLCSig
+
+let ( let+ ) opt f = Result.map f opt
+
+let ( and+ ) opt1 opt2 = match opt1, opt2 with
+  | Ok x, Ok y -> Ok (x, y)
+  | Ok _, Error e -> Error e
+  | Error e, Ok _ -> Error e
+  | Error e, Error _ -> Error e
+
+let ( and* ) = ( and+ )
+
+let ( let* ) = Result.bind
+
+let rec infer
+    (gamma : (tm Abt.var * ty Abt.t) list)
+    (term : tm Abt.t)
+  : (ty Abt.t, unit) result =
+  match Abt.out term with
+  | Op(Ax, Abt.[]) -> Ok (Abt.into (Op(Unit, Abt.[])))
+  | Op(Lam, Abt.[in_ty; body]) ->
+    begin match Abt.out body with
+      | Abs(var, body) ->
+        let+ out_ty = infer ((var, in_ty) :: gamma) body in
+        Abt.into (Op(Arrow, Abt.[in_ty; out_ty]))
+      | Op _ -> .
+      | Var _ -> failwith ""
+    end
+  | Op(App, Abt.[f; arg]) ->
+    let* f_ty = infer gamma f
+    and* arg_ty = infer gamma arg in
+    begin match Abt.out f_ty with
+      | Op(Arrow, Abt.[in_ty; out_ty]) ->
+        if Abt.equal in_ty arg_ty then
+          Ok out_ty
+        else
+          Error ()
+      | _ -> Error ()
+    end
+  | Var v ->
+    match List.assoc_opt v gamma with
+    | Some ty -> Ok ty
+    | None -> Error ()
+
+let has_ty (term : tm Abt.t) (ty : ty Abt.t) =
+  match infer [] term with
+  | Ok ty' -> Abt.equal ty ty'
+  | Error _ -> false
 
 let unit_type = Abt.into (Abt.Op(Unit, Abt.[]))
 
@@ -81,6 +128,9 @@ let rec equal_types (ty1 : ty Abt.t) (ty2 : ty Abt.t) =
   | Var _, Op _ -> false
   | Op _, Var _ -> false
   | Var _, Var _ -> failwith "Unreachable!"
+
+let () =
+  assert (has_ty (create_unit_id ()) unit_arr_unit)
 
 let to_string margin term =
   let buf = Buffer.create 32 in
