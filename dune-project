@@ -9,9 +9,11 @@
 (package
  (name sorted-abt)
  (synopsis "Strongly typed many-sorted abstract binding trees (ABTs)")
- (description "Strongly typed many-sorted abstract binding trees (ABTs).
-
-This library provides a type-safe API for manipulating abstract binding trees
-of many sorts. Trees carry their sorts as a phantom type parameter.")
+ (description "\
+This is an implementation of many-sorted abstract binding trees. Abstract
+binding trees (ABTs) are similar to abstract syntax trees, but also keep track
+of variable scopes. Many-sorted ABTs support multiple syntactic classes, known
+as sorts. This library uses GADTs and phantom types to statically ensure that
+only syntactically valid ABTs are representable.")
  (depends
   (ocaml (>= 4.12))))

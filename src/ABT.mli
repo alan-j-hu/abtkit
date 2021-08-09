@@ -9,7 +9,7 @@ module Make(Sig : Signature) : S
 
 (**
 
-{1 Example: Simply-typed lambda calculus}
+{1 Example: Simply Typed Lambda Calculus}
 
 Here is an example of using this library to create binding trees for the
 simply typed lambda calculus (STLC).
