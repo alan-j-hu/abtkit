@@ -12,13 +12,13 @@ module Make(Sig : Signature) : S
 {1 Example: Simply-typed lambda calculus}
 
 Here is an example of using this library to create binding trees for the
-simply-typed lambda calculus (STLC).
+simply typed lambda calculus (STLC).
 
 {2 Signature}
 
 First, create an input module for the language signature:
 {[
-module STLC_Sig = struct
+module Sig = struct
 ]}
 
 The STLC has two sorts, types and terms:
@@ -26,15 +26,13 @@ The STLC has two sorts, types and terms:
   type ty = Ty
   type tm = Tm
 
-  type _ sort =
+  type 'sort sort =
     | Term : tm sort
     | Type : ty sort
 
   let equal_sorts
     : type s1 s2 any.
-      s1 sort
-      -> s2 sort
-      -> ((s1, s2) Sorted_abt.eq, (s1, s2) Sorted_abt.eq -> any) Either.t =
+      s1 sort -> s2 sort -> ((s1, s2) ABT.eq, (s1, s2) ABT.eq -> any) Either.t =
     fun s1 s2 -> match s1, s2 with
       | Term, Term -> Left Refl
       | Term, Type -> Right (function _ -> .)
@@ -51,26 +49,15 @@ application), and [lam] (function introduction). The operators are listed as a
 GADT that contains their sorts and arities.
 {[
   type ('arity, 'sort) operator =
-    | Unit : (ty Sorted_abt.out, ty) operator
-    | Arrow : (ty Sorted_abt.out -> ty Sorted_abt.out -> ty Sorted_abt.out, ty) operator
-    | Ax : (tm Sorted_abt.out, tm) operator
-    | App : (tm Sorted_abt.out -> tm Sorted_abt.out -> tm Sorted_abt.out, tm) operator
-    | Lam : (ty Sorted_abt.out -> (tm -> tm Sorted_abt.out) -> tm Sorted_abt.out, tm) operator
-
-  let equal_sorts
-    : type s1 s2 any.
-      s1 sort
-      -> s2 sort
-      -> ((s1, s2) Sorted_abt.eq, (s1, s2) Sorted_abt.eq -> any) Either.t =
-    fun s1 s2 -> match s1, s2 with
-      | Term, Term -> Left Refl
-      | Term, Type -> Right (function _ -> .)
-      | Type, Type -> Left Refl
-      | Type, Term -> Right (function _ -> .)
+    | Unit : (ty ABT.out, ty) operator
+    | Arrow : (ty ABT.out -> ty ABT.out -> ty ABT.out, ty) operator
+    | Ax : (tm ABT.out, tm) operator
+    | App : (tm ABT.out -> tm ABT.out -> tm ABT.out, tm) operator
+    | Lam : (ty ABT.out -> (tm -> tm ABT.out) -> tm ABT.out, tm) operator
 
   let equal_ops
     : type a1 a2 s.
-      (a1, s) operator -> (a2, s) operator -> (a1, a2) Sorted_abt.eq option =
+      (a1, s) operator -> (a2, s) operator -> (a1, a2) ABT.eq option =
     fun op1 op2 -> match op1, op2 with
       | App, App -> Some Refl
       | Arrow, Arrow -> Some Refl
@@ -98,21 +85,21 @@ Finally, variable names are strings:
 end
 ]}
 
-The [STLCSig] module can be passed to {!module:Make} to implement ABTs for the
+The [Sig] module can be passed to {!module:Make} to implement ABTs for the
 STLC.
 {[
-module Abt = Sorted_abt.Make(STLC_Sig)
+module Syn = ABT.Make(Sig)
 
-open STLC_Sig
+open Sig
 ]}
 
 {2 Static Semantics}
 
-Create some utility functions for working with results:
+The following are utility functions for working with results:
 {[
-let ( let+ ) opt f = Result.map f opt
+let ( let+ ) res f = Result.map f res
 
-let ( and+ ) opt1 opt2 = match opt1, opt2 with
+let ( and+ ) res1 res2 = match res1, res2 with
   | Ok x, Ok y -> Ok (x, y)
   | Ok _, Error e -> Error e
   | Error e, Ok _ -> Error e
@@ -123,24 +110,24 @@ let ( and* ) = ( and+ )
 let ( let* ) = Result.bind
 ]}
 
-This is a function that performs type inference:
+Create a function for performing type inference:
 {[
 let rec infer
-    (gamma : (tm Abt.var * ty Sorted_abt.out Abt.t) list)
-    (term : tm Sorted_abt.out Abt.t)
-  : (ty Sorted_abt.out Abt.t, unit) result =
-  match Abt.out term with
-  | Op(Ax, Abt.[]) -> Ok (Abt.into (Op(Unit, Abt.[])))
-  | Op(Lam, Abt.[in_ty; body]) ->
-    let Abs(var, body) = Abt.out body in
+    (gamma : (tm Syn.var * ty ABT.out Syn.t) list)
+    (term : tm ABT.out Syn.t)
+  : (ty ABT.out Syn.t, unit) result =
+  match Syn.out term with
+  | Op(Ax, Syn.[]) -> Ok (Syn.op Unit Syn.[])
+  | Op(Lam, Syn.[in_ty; body]) ->
+    let Abs(var, body) = Syn.out body in
     let+ out_ty = infer ((var, in_ty) :: gamma) body in
-    Abt.into (Op(Arrow, Abt.[in_ty; out_ty]))
-  | Op(App, Abt.[f; arg]) ->
+    Syn.op Arrow Syn.[in_ty; out_ty]
+  | Op(App, Syn.[f; arg]) ->
     let* f_ty = infer gamma f
     and* arg_ty = infer gamma arg in
-    begin match Abt.out f_ty with
-      | Op(Arrow, Abt.[in_ty; out_ty]) ->
-        if Abt.equal in_ty arg_ty then
+    begin match Syn.out f_ty with
+      | Op(Arrow, Syn.[in_ty; out_ty]) ->
+        if Syn.equal in_ty arg_ty then
           Ok out_ty
         else
           Error ()
@@ -151,9 +138,9 @@ let rec infer
     | Some ty -> Ok ty
     | None -> Error ()
 
-let has_ty (term : tm Sorted_abt.out Abt.t) (ty : ty Sorted_abt.out Abt.t) =
+let has_ty (term : tm ABT.out Syn.t) (ty : ty ABT.out Syn.t) =
   match infer [] term with
-  | Ok ty' -> Abt.equal ty ty'
+  | Ok ty' -> Syn.equal ty ty'
   | Error _ -> false
 ]}
 
@@ -162,28 +149,28 @@ let has_ty (term : tm Sorted_abt.out Abt.t) (ty : ty Sorted_abt.out Abt.t) =
 For the dynamic semantics, we will define a small-step interpreter. An
 interpreter result can either be a step, a value, or an error.
 {[
-type progress = Step of tm Sorted_abt.out Abt.t | Val | Err
+type progress = Step of tm ABT.out Syn.t | Val | Err
 ]}
 
 The interpreter will use call-by-value (CBV), meaning that function arguments
 are evaluated to values before being substituted into the function.
 {[
-let rec cbv (term : tm Sorted_abt.out Abt.t) =
-  match Abt.out term with
-  | Op(Ax, Abt.[]) -> Val
-  | Op(Lam, Abt.[_; _]) -> Val
-  | Op(App, Abt.[f; arg]) ->
+let rec cbv (term : tm ABT.out Syn.t) =
+  match Syn.out term with
+  | Op(Ax, Syn.[]) -> Val
+  | Op(Lam, Syn.[_; _]) -> Val
+  | Op(App, Syn.[f; arg]) ->
     begin match cbv f with
-      | Step next -> Step (Abt.op App Abt.[next; arg])
+      | Step next -> Step (Syn.op App Syn.[next; arg])
       | Val ->
         begin match cbv arg with
-          | Step next -> Step (Abt.op App Abt.[f; next])
+          | Step next -> Step (Syn.op App Syn.[f; next])
           | Val ->
-            begin match Abt.out f with
-              | Op(Lam, Abt.[_; abs]) ->
-                let Abs(var, body) = Abt.out abs in
-                Step (body |> Abt.subst Term begin fun var' ->
-                    match Abt.equal_vars var var' with
+            begin match Syn.out f with
+              | Op(Lam, Syn.[_; abs]) ->
+                let Abs(var, body) = Syn.out abs in
+                Step (body |> Syn.subst Term begin fun var' ->
+                    match Syn.equal_vars var var' with
                     | Some Refl -> Some arg
                     | None -> None
                   end)

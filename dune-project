@@ -8,7 +8,10 @@
 
 (package
  (name sorted-abt)
- (synopsis "Strongly-typed multi-sorted abstract binding trees (ABTs)")
- (description "Strongly-typed abstract binding trees ABTs.")
+ (synopsis "Strongly typed many-sorted abstract binding trees (ABTs)")
+ (description "Strongly typed many-sorted abstract binding trees (ABTs).
+
+This library provides a type-safe API for manipulating abstract binding trees
+of many sorts. Trees carry their sorts as a phantom type parameter.")
  (depends
   (ocaml (>= 4.12))))
