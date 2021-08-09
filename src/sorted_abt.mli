@@ -11,11 +11,14 @@ module Make(Sig : Signature) : S
 
 {1 Example: Simply-typed lambda calculus}
 
-Here is a simple example of how to use this library.
+Here is an example of using this library to create binding trees for the
+simply-typed lambda calculus (STLC).
+
+{2 Signature}
 
 First, create an input module for the language signature:
 {[
-module STLC = struct
+module STLC_Sig = struct
 ]}
 
 The STLC has two sorts, types and terms:
@@ -98,10 +101,12 @@ end
 The [STLCSig] module can be passed to {!module:Make} to implement ABTs for the
 STLC.
 {[
-module Abt = Sorted_abt.Make(STLCSig)
+module Abt = Sorted_abt.Make(STLC_Sig)
 
-open STLCSig
+open STLC_Sig
 ]}
+
+{2 Static Semantics}
 
 Create some utility functions for working with results:
 {[
@@ -150,5 +155,44 @@ let has_ty (term : tm Sorted_abt.out Abt.t) (ty : ty Sorted_abt.out Abt.t) =
   match infer [] term with
   | Ok ty' -> Abt.equal ty ty'
   | Error _ -> false
+]}
+
+{2 Dynamic Semantics}
+
+For the dynamic semantics, we will define a small-step interpreter. An
+interpreter result can either be a step, a value, or an error.
+{[
+type progress = Step of tm Sorted_abt.out Abt.t | Val | Err
+]}
+
+The interpreter will use call-by-value (CBV), meaning that function arguments
+are evaluated to values before being substituted into the function.
+{[
+let rec cbv (term : tm Sorted_abt.out Abt.t) =
+  match Abt.out term with
+  | Op(Ax, Abt.[]) -> Val
+  | Op(Lam, Abt.[_; _]) -> Val
+  | Op(App, Abt.[f; arg]) ->
+    begin match cbv f with
+      | Step next -> Step (Abt.op App Abt.[next; arg])
+      | Val ->
+        begin match cbv arg with
+          | Step next -> Step (Abt.op App Abt.[f; next])
+          | Val ->
+            begin match Abt.out f with
+              | Op(Lam, Abt.[_; abs]) ->
+                let Abs(var, body) = Abt.out abs in
+                Step (body |> Abt.subst Term begin fun var' ->
+                    match Abt.equal_vars var var' with
+                    | Some Refl -> Some arg
+                    | None -> None
+                  end)
+              | _ -> Err
+            end
+          | Err -> Err
+        end
+      | Err -> Err
+    end
+  | Var _ -> Err
 ]}
 *)

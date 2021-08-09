@@ -4,7 +4,7 @@
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at https://mozilla.org/MPL/2.0/. *)
 
-module STLCSig = struct
+module STLC_Sig = struct
   type ty = Ty
   type tm = Tm
 
@@ -56,9 +56,9 @@ module STLCSig = struct
   let pp_print_name = Format.pp_print_string
 end
 
-module Abt = Sorted_abt.Make(STLCSig)
+module Abt = Sorted_abt.Make(STLC_Sig)
 
-open STLCSig
+open STLC_Sig
 
 let ( let+ ) opt f = Result.map f opt
 
@@ -103,30 +103,36 @@ let has_ty (term : tm Sorted_abt.out Abt.t) (ty : ty Sorted_abt.out Abt.t) =
   | Ok ty' -> Abt.equal ty ty'
   | Error _ -> false
 
+type progress = Step of tm Sorted_abt.out Abt.t | Val | Err
+
+let rec cbv (term : tm Sorted_abt.out Abt.t) =
+  match Abt.out term with
+  | Op(Ax, Abt.[]) -> Val
+  | Op(Lam, Abt.[_; _]) -> Val
+  | Op(App, Abt.[f; arg]) ->
+    begin match cbv f with
+      | Step next -> Step (Abt.op App Abt.[next; arg])
+      | Val ->
+        begin match cbv arg with
+          | Step next -> Step (Abt.op App Abt.[f; next])
+          | Val ->
+            begin match Abt.out f with
+              | Op(Lam, Abt.[_; abs]) ->
+                let Abs(var, body) = Abt.out abs in
+                Step (body |> Abt.subst Term begin fun var' ->
+                    match Abt.equal_vars var var' with
+                    | Some Refl -> Some arg
+                    | None -> None
+                  end)
+              | _ -> Err
+            end
+          | Err -> Err
+        end
+      | Err -> Err
+    end
+  | Var _ -> Err
+
 let unit_type = Abt.into (Abt.Op(Unit, Abt.[]))
-
-let unit_arr_unit =
-  Abt.into (Abt.Op(Arrow, Abt.[unit_type; unit_type]))
-
-let create_unit_id () =
-  let x = Abt.fresh_var Term "x" in
-  let xv = Abt.into (Abt.Var x) in
-  let abstr = Abt.into (Abt.Abs(x, xv)) in
-  Abt.into (Abt.Op(Lam, Abt.[unit_type; abstr]))
-
-let rec equal_types (ty1 : ty Sorted_abt.out Abt.t) (ty2 : ty Sorted_abt.out Abt.t) =
-  match Abt.out ty1, Abt.out ty2 with
-  | Op(Arrow, Abt.[a; b]), Op(Arrow, Abt.[c; d]) ->
-    equal_types a c && equal_types b d
-  | Op(Arrow, Abt.[_; _]), Op(Unit, Abt.[]) -> false
-  | Op(Unit, Abt.[]), Op(Arrow, Abt.[_; _]) -> false
-  | Op(Unit, Abt.[]), Op(Unit, Abt.[]) -> true
-  | Var _, Op _ -> false
-  | Op _, Var _ -> false
-  | Var _, Var _ -> failwith "Unreachable!"
-
-let () =
-  assert (has_ty (create_unit_id ()) unit_arr_unit)
 
 let to_string margin term =
   let buf = Buffer.create 32 in
@@ -137,19 +143,23 @@ let to_string margin term =
   Buffer.contents buf
 
 let () =
-  assert (create_unit_id () = create_unit_id ());
-  assert (equal_types unit_type unit_type);
-  assert (equal_types unit_arr_unit unit_arr_unit);
-  assert (equal_types unit_arr_unit unit_type = false);
-  assert (equal_types unit_type unit_arr_unit = false);
-  let x = Abt.fresh_var Term "x" in
-  let xv = Abt.into (Abt.Var x) in
-  assert (Abt.subst Term (fun var ->
-      match Abt.equal_vars var x with
-      | Some Refl -> Some (create_unit_id ())
-      | None -> None
-    ) xv = create_unit_id ());
-  assert (Abt.equal (create_unit_id ()) (create_unit_id ()));
+  let unit_arr_unit = Abt.into (Abt.Op(Arrow, Abt.[unit_type; unit_type])) in
+  let ax = Abt.op Ax Abt.[] in
+  let id_unit =
+    Abt.op Lam Abt.[ Abt.op Unit Abt.[]
+                   ; let x = Abt.fresh_var Term "x" in
+                     Abt.abs x (Abt.var x) ]
+  in
+  let ret_id_unit =
+    Abt.op Lam Abt.[ Abt.op Unit Abt.[]
+                   ; let y = Abt.fresh_var Term "y" in
+                     Abt.abs y id_unit ]
+  in
+  assert (has_ty id_unit unit_arr_unit);
+  assert (cbv ax = Val);
+  assert (cbv (Abt.op App Abt.[id_unit; ax]) = Step ax);
+  assert (cbv (Abt.op App Abt.[ret_id_unit; ax]) = Step id_unit);
   assert (to_string 78 unit_arr_unit = "arrow(unit();unit())");
   assert (to_string 16 unit_arr_unit = "arrow(unit();\n      unit())");
-  assert (to_string 78 (create_unit_id ()) = "lam(unit();x.x)")
+  assert (to_string 78 id_unit = "lam(unit();x.x)");
+  assert (to_string 78 ret_id_unit = "lam(unit();y.lam(unit();x.x))")
