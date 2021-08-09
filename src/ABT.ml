@@ -22,6 +22,8 @@ module Make(Sig : Signature) = struct
     counter := id + 1;
     { id; name; sort }
 
+  let name var = var.name
+
   let equal_vars : type s1 s2 . s1 var -> s2 var -> (s1, s2) eq option =
     fun v1 v2 -> match equal_sorts v1.sort v2.sort with
       | Left Refl when v1.id = v2.id -> Some Refl

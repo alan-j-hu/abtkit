@@ -112,10 +112,17 @@ let ( let* ) = Result.bind
 
 Create a function for performing type inference:
 {[
+let to_string term =
+  let buf = Buffer.create 32 in
+  let ppf = Format.formatter_of_buffer buf in
+  Syn.pp_print ppf term;
+  Format.pp_print_flush ppf ();
+  Buffer.contents buf
+
 let rec infer
     (gamma : (tm Syn.var * ty ABT.out Syn.t) list)
     (term : tm ABT.out Syn.t)
-  : (ty ABT.out Syn.t, unit) result =
+  : (ty ABT.out Syn.t, string) result =
   match Syn.out term with
   | Op(Ax, Syn.[]) -> Ok (Syn.op Unit Syn.[])
   | Op(Lam, Syn.[in_ty; body]) ->
@@ -130,18 +137,12 @@ let rec infer
         if Syn.equal in_ty arg_ty then
           Ok out_ty
         else
-          Error ()
-      | _ -> Error ()
+          Error ("Expected argument of type " ^ to_string in_ty ^
+                 ", got argument of type " ^ to_string arg_ty ^ "!")
+      | _ ->
+        Error ("Expected function, got term of type " ^ to_string f_ty ^ "!")
     end
-  | Var v ->
-    match List.assoc_opt v gamma with
-    | Some ty -> Ok ty
-    | None -> Error ()
-
-let has_ty (term : tm ABT.out Syn.t) (ty : ty ABT.out Syn.t) =
-  match infer [] term with
-  | Ok ty' -> Syn.equal ty ty'
-  | Error _ -> false
+  | Var v -> Ok (List.assoc v gamma)
 ]}
 
 {2 Dynamic Semantics}

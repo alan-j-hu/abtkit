@@ -9,7 +9,7 @@ type (_, _) eq =
 (** [('a, 'b) eq] is the proposition that ['a] and ['b] are equal. *)
 
 type 'a out = Out of 'a [@@ocaml.unbox]
-(** A helper type for annotating the type of {!constructor:S.operands.([])}. *)
+(** A helper type for specifying arities and valences. *)
 
 module type Signature = sig
   type 'sort sort
@@ -106,6 +106,9 @@ module type S = sig
   val fresh_var : 'sort sort -> name -> 'sort var
   (** Generates a fresh variable of the given sort. The variable is unique from
       any other variable generated from the function. *)
+
+  val name : _ var -> name
+  (** Retrieves the name of the variable. *)
 
   val equal_vars : 'sort1 var -> 'sort2 var -> ('sort1, 'sort2) eq option
   (** Checks two variables for equality. Iff the variables are equal, returns

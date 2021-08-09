@@ -70,10 +70,17 @@ let ( and* ) = ( and+ )
 
 let ( let* ) = Result.bind
 
+let to_string term =
+  let buf = Buffer.create 32 in
+  let ppf = Format.formatter_of_buffer buf in
+  Syn.pp_print ppf term;
+  Format.pp_print_flush ppf ();
+  Buffer.contents buf
+
 let rec infer
     (gamma : (tm Syn.var * ty ABT.out Syn.t) list)
     (term : tm ABT.out Syn.t)
-  : (ty ABT.out Syn.t, unit) result =
+  : (ty ABT.out Syn.t, string) result =
   match Syn.out term with
   | Op(Ax, Syn.[]) -> Ok (Syn.op Unit Syn.[])
   | Op(Lam, Syn.[in_ty; body]) ->
@@ -88,18 +95,12 @@ let rec infer
         if Syn.equal in_ty arg_ty then
           Ok out_ty
         else
-          Error ()
-      | _ -> Error ()
+          Error ("Expected argument of type " ^ to_string in_ty ^
+                 ", got argument of type " ^ to_string arg_ty ^ "!")
+      | _ ->
+        Error ("Expected function, got term of type " ^ to_string f_ty ^ "!")
     end
-  | Var v ->
-    match List.assoc_opt v gamma with
-    | Some ty -> Ok ty
-    | None -> Error ()
-
-let has_ty (term : tm ABT.out Syn.t) (ty : ty ABT.out Syn.t) =
-  match infer [] term with
-  | Ok ty' -> Syn.equal ty ty'
-  | Error _ -> false
+  | Var v -> Ok (List.assoc v gamma)
 
 type progress = Step of tm ABT.out Syn.t | Val | Err
 
@@ -130,13 +131,10 @@ let rec cbv (term : tm ABT.out Syn.t) =
     end
   | Var _ -> Err
 
-let to_string margin term =
-  let buf = Buffer.create 32 in
-  let ppf = Format.formatter_of_buffer buf in
-  Format.pp_set_margin ppf margin;
-  Syn.pp_print ppf term;
-  Format.pp_print_flush ppf ();
-  Buffer.contents buf
+let has_ty (term : tm ABT.out Syn.t) (ty : ty ABT.out Syn.t) =
+  match infer [] term with
+  | Ok ty' -> Syn.equal ty ty'
+  | Error _ -> false
 
 let () =
   let unit_type = Syn.op Unit Syn.[] in
@@ -152,11 +150,11 @@ let () =
                    ; let y = Syn.fresh_var Term "y" in
                      Syn.abs y id_unit ]
   in
+  assert (has_ty ax unit_type);
   assert (has_ty id_unit unit_arr_unit);
   assert (cbv ax = Val);
   assert (cbv (Syn.op App Syn.[id_unit; ax]) = Step ax);
   assert (cbv (Syn.op App Syn.[ret_id_unit; ax]) = Step id_unit);
-  assert (to_string 78 unit_arr_unit = "arrow(unit();unit())");
-  assert (to_string 16 unit_arr_unit = "arrow(unit();\n      unit())");
-  assert (to_string 78 id_unit = "lam(unit();x.x)");
-  assert (to_string 78 ret_id_unit = "lam(unit();y.lam(unit();x.x))")
+  assert (to_string unit_arr_unit = "arrow(unit();unit())");
+  assert (to_string id_unit = "lam(unit();x.x)");
+  assert (to_string ret_id_unit = "lam(unit();y.lam(unit();x.x))")
