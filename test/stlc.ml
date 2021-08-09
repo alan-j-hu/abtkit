@@ -92,7 +92,7 @@ let rec infer
     and* arg_ty = infer gamma arg in
     begin match Syn.out f_ty with
       | Op(Arrow, Syn.[in_ty; out_ty]) ->
-        if Syn.equal in_ty arg_ty then
+        if Syn.aequiv in_ty arg_ty then
           Ok out_ty
         else
           Error ("Expected argument of type " ^ to_string in_ty ^
@@ -133,7 +133,7 @@ let rec cbv (term : tm ABT.out Syn.t) =
 
 let has_ty (term : tm ABT.out Syn.t) (ty : ty ABT.out Syn.t) =
   match infer [] term with
-  | Ok ty' -> Syn.equal ty ty'
+  | Ok ty' -> Syn.aequiv ty ty'
   | Error _ -> false
 
 let () =

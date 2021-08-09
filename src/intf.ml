@@ -132,8 +132,9 @@ module type S = sig
   val subst : 'sort sort -> ('sort var -> 'sort out t option) -> 'valence t -> 'valence t
   (** Applies a substitution to the ABT. *)
 
-  val equal : 'valence t -> 'valence t -> bool
-  (** Checks two ABTs for alpha-equivalence. *)
+  val aequiv : 'valence t -> 'valence t -> bool
+  (** Checks two ABTs for alpha-equivalence. Two ABTs are alpha-equivalent iff
+      they are structurally equal up to renaming of bound variables. *)
 
   val pp_print : Format.formatter -> 'valence t -> unit
   (** Pretty-prints an ABT. *)

@@ -112,7 +112,7 @@ module Make(Sig : Signature) = struct
       | Oper(ator, ands) ->
         Oper(ator, map_operands { f = fun x -> subst sort sub x } ands)
 
-  let rec equal : type v. v t -> v t -> bool = fun t1 t2 ->
+  let rec aequiv : type v. v t -> v t -> bool = fun t1 t2 ->
     match t1, t2 with
     | Free var1, Free var2 ->
       begin match equal_vars var1 var2 with
@@ -120,19 +120,19 @@ module Make(Sig : Signature) = struct
         | None -> false
       end
     | Bound(var1, _), Bound(var2, _) -> var1 = var2
-    | Abstr(_, _, body1), Abstr(_, _, body2) -> equal body1 body2
+    | Abstr(_, _, body1), Abstr(_, _, body2) -> aequiv body1 body2
     | Oper(ator1, ands1), Oper(ator2, ands2) ->
       begin match equal_ops ator1 ator2 with
-        | Some Refl -> equal_operands ands1 ands2
+        | Some Refl -> aequiv_operands ands1 ands2
         | None -> false
       end
     | _, _ -> false
 
-  and equal_operands
+  and aequiv_operands
     : type a s. (a, s) operands -> (a, s) operands -> bool =
     fun ands1 ands2 -> match ands1, ands2 with
       | [], [] -> true
-      | x :: xs, y :: ys -> equal x y && equal_operands xs ys
+      | x :: xs, y :: ys -> aequiv x y && aequiv_operands xs ys
 
   let pp_print_var ppf var =
     pp_print_name ppf var.name
