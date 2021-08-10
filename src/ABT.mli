@@ -1,3 +1,11 @@
+(** Many-sorted abstract binding trees.
+
+    This is an implementation of many-sorted abstract binding trees. Abstract
+    binding trees (ABTs) are similar to abstract syntax trees, but also keep
+    track of variable scopes. Many-sorted ABTs support multiple syntactic
+    classes, known as sorts. This library uses GADTs and phantom types to
+    statically ensure that only syntactically valid ABTs are representable. *)
+
 include module type of Intf (** @inline *)
 
 module Make(Sig : Signature) : S
@@ -43,7 +51,7 @@ The STLC has two sorts, types and terms:
 The sorts are represented as phantom types. The type [_ sort] is a proxy that
 holds the type-level sort.
 
-The operators of the language will be [unit] (the unit type), [arrow] (the
+The operators of the language are [unit] (the unit type), [arrow] (the
 function type), [ax] (the unique inhabitant of the unit type), [app] (function
 application), and [lam] (function introduction). The operators are listed as a
 GADT that contains their sorts and arities.
@@ -125,8 +133,8 @@ let rec infer
   : (ty ABT.va Syn.t, string) result =
   match Syn.out term with
   | Op(Ax, Syn.[]) -> Ok (Syn.op Unit Syn.[])
-  | Op(Lam, Syn.[in_ty; body]) ->
-    let Abs(var, body) = Syn.out body in
+  | Op(Lam, Syn.[in_ty; abstr]) ->
+    let Abs(var, body) = Syn.out abstr in
     let+ out_ty = infer ((var, in_ty) :: gamma) body in
     Syn.op Arrow Syn.[in_ty; out_ty]
   | Op(App, Syn.[f; arg]) ->
@@ -148,12 +156,12 @@ let rec infer
 {2 Dynamic Semantics}
 
 For the dynamic semantics, we will define a small-step interpreter. An
-interpreter result can either be a step, a value, or an error.
+interpreter result can either be a step, a value, or an error:
 {[
 type progress = Step of tm ABT.va Syn.t | Val | Err
 ]}
 
-The interpreter will use call-by-value (CBV), meaning that function arguments
+The interpreter shall use call-by-value (CBV), meaning that function arguments
 are evaluated to values before being substituted into the function.
 {[
 let rec cbv (term : tm ABT.va Syn.t) =
@@ -168,8 +176,8 @@ let rec cbv (term : tm ABT.va Syn.t) =
           | Step next -> Step (Syn.op App Syn.[f; next])
           | Val ->
             begin match Syn.out f with
-              | Op(Lam, Syn.[_; abs]) ->
-                let Abs(var, body) = Syn.out abs in
+              | Op(Lam, Syn.[_; abstr]) ->
+                let Abs(var, body) = Syn.out abstr in
                 Step (body |> Syn.subst Term begin fun var' ->
                     match Syn.equal_vars var var' with
                     | Some Refl -> Some arg

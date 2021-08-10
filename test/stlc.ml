@@ -83,8 +83,8 @@ let rec infer
   : (ty ABT.va Syn.t, string) result =
   match Syn.out term with
   | Op(Ax, Syn.[]) -> Ok (Syn.op Unit Syn.[])
-  | Op(Lam, Syn.[in_ty; body]) ->
-    let Abs(var, body) = Syn.out body in
+  | Op(Lam, Syn.[in_ty; abstr]) ->
+    let Abs(var, body) = Syn.out abstr in
     let+ out_ty = infer ((var, in_ty) :: gamma) body in
     Syn.op Arrow Syn.[in_ty; out_ty]
   | Op(App, Syn.[f; arg]) ->
@@ -116,8 +116,8 @@ let rec cbv (term : tm ABT.va Syn.t) =
           | Step next -> Step (Syn.op App Syn.[f; next])
           | Val ->
             begin match Syn.out f with
-              | Op(Lam, Syn.[_; abs]) ->
-                let Abs(var, body) = Syn.out abs in
+              | Op(Lam, Syn.[_; abstr]) ->
+                let Abs(var, body) = Syn.out abstr in
                 Step (body |> Syn.subst Term begin fun var' ->
                     match Syn.equal_vars var var' with
                     | Some Refl -> Some arg

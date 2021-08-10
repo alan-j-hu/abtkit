@@ -99,7 +99,7 @@ module type S = sig
 
   type 'valence view =
     | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
-    (** An abstraction, which binds a variable within a term. *)
+    (** An abstractor, which binds a variable within a term. *)
     | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort va view
     (** An operator applied to operands. *)
     | Var : 'sort var -> 'sort va view
@@ -118,7 +118,7 @@ module type S = sig
       [Some proof] that their sorts are the same. *)
 
   val abs : 'sort var -> 'valence t -> ('sort -> 'valence) t
-  (** Constructs an abstraction ABT. *)
+  (** Constructs an abstractor ABT. *)
 
   val op : ('arity, 'sort) operator -> ('arity, 'sort) operands -> 'sort va t
   (** Constructs an operation ABT. *)
