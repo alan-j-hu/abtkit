@@ -8,8 +8,11 @@ type (_, _) eq =
   | Refl : ('a, 'a) eq (** Proof that ['a] and ['a] are equal. *)
 (** [('a, 'b) eq] is the proposition that ['a] and ['b] are equal. *)
 
-type 'a out = Out of 'a [@@ocaml.unbox]
-(** A helper type for specifying arities and valences. *)
+type 'a ar = Arity of 'a [@@ocaml.unbox]
+(** A helper type for specifying arities. *)
+
+type 'a va = Valence of 'a [@@ocaml.unbox]
+(** A helper type for specifying valences. *)
 
 module type Signature = sig
   type 'sort sort
@@ -88,7 +91,7 @@ module type S = sig
       representing the valence of the ABT. *)
 
   type ('arity, 'sort) operands =
-    | [] : ('sort out, 'sort) operands
+    | [] : ('sort ar, 'sort) operands
     (** An empty list of operands. *)
     | (::) : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
     (** An operand followed by a list of operands. *)
@@ -97,9 +100,9 @@ module type S = sig
   type 'valence view =
     | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
     (** An abstraction, which binds a variable within a term. *)
-    | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort out view
+    | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort va view
     (** An operator applied to operands. *)
-    | Var : 'sort var -> 'sort out view
+    | Var : 'sort var -> 'sort va view
     (** A variable. *)
   (** A view of an ABT.*)
 
@@ -117,10 +120,10 @@ module type S = sig
   val abs : 'sort var -> 'valence t -> ('sort -> 'valence) t
   (** Constructs an abstraction ABT. *)
 
-  val op : ('arity, 'sort) operator -> ('arity, 'sort) operands -> 'sort out t
+  val op : ('arity, 'sort) operator -> ('arity, 'sort) operands -> 'sort va t
   (** Constructs an operation ABT. *)
 
-  val var : 'sort var -> 'sort out t
+  val var : 'sort var -> 'sort va t
   (** Constructs a variable ABT. *)
 
   val into : 'valence view -> 'valence t
@@ -129,7 +132,7 @@ module type S = sig
   val out : 'valence t -> 'valence view
   (** Views an ABT. *)
 
-  val subst : 'sort sort -> ('sort var -> 'sort out t option) -> 'valence t -> 'valence t
+  val subst : 'sort sort -> ('sort var -> 'sort va t option) -> 'valence t -> 'valence t
   (** Applies a substitution to the ABT. *)
 
   val aequiv : 'valence t -> 'valence t -> bool

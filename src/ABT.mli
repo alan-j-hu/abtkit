@@ -49,11 +49,11 @@ application), and [lam] (function introduction). The operators are listed as a
 GADT that contains their sorts and arities.
 {[
   type ('arity, 'sort) operator =
-    | Unit : (ty ABT.out, ty) operator
-    | Arrow : (ty ABT.out -> ty ABT.out -> ty ABT.out, ty) operator
-    | Ax : (tm ABT.out, tm) operator
-    | App : (tm ABT.out -> tm ABT.out -> tm ABT.out, tm) operator
-    | Lam : (ty ABT.out -> (tm -> tm ABT.out) -> tm ABT.out, tm) operator
+    | Unit : (ty ABT.ar, ty) operator
+    | Arrow : (ty ABT.va -> ty ABT.va -> ty ABT.ar, ty) operator
+    | Ax : (tm ABT.ar, tm) operator
+    | App : (tm ABT.va -> tm ABT.va -> tm ABT.ar, tm) operator
+    | Lam : (ty ABT.va -> (tm -> tm ABT.va) -> tm ABT.ar, tm) operator
 
   let equal_ops
     : type a1 a2 s.
@@ -120,9 +120,9 @@ let to_string term =
   Buffer.contents buf
 
 let rec infer
-    (gamma : (tm Syn.var * ty ABT.out Syn.t) list)
-    (term : tm ABT.out Syn.t)
-  : (ty ABT.out Syn.t, string) result =
+    (gamma : (tm Syn.var * ty ABT.va Syn.t) list)
+    (term : tm ABT.va Syn.t)
+  : (ty ABT.va Syn.t, string) result =
   match Syn.out term with
   | Op(Ax, Syn.[]) -> Ok (Syn.op Unit Syn.[])
   | Op(Lam, Syn.[in_ty; body]) ->
@@ -150,13 +150,13 @@ let rec infer
 For the dynamic semantics, we will define a small-step interpreter. An
 interpreter result can either be a step, a value, or an error.
 {[
-type progress = Step of tm ABT.out Syn.t | Val | Err
+type progress = Step of tm ABT.va Syn.t | Val | Err
 ]}
 
 The interpreter will use call-by-value (CBV), meaning that function arguments
 are evaluated to values before being substituted into the function.
 {[
-let rec cbv (term : tm ABT.out Syn.t) =
+let rec cbv (term : tm ABT.va Syn.t) =
   match Syn.out term with
   | Op(Ax, Syn.[]) -> Val
   | Op(Lam, Syn.[_; _]) -> Val
