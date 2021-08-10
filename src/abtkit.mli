@@ -1,10 +1,11 @@
 (** Many-sorted abstract binding trees.
 
-    This is an implementation of many-sorted abstract binding trees. Abstract
-    binding trees (ABTs) are similar to abstract syntax trees, but also keep
-    track of variable scopes. Many-sorted ABTs support multiple syntactic
-    classes, known as sorts. This library uses GADTs and phantom types to
-    statically ensure that only syntactically valid ABTs are representable. *)
+    Abtkit is an implementation of many-sorted abstract binding trees.
+    Abstract binding trees (ABTs) are similar to abstract syntax trees, but
+    also keep track of variable scopes. Many-sorted ABTs support multiple
+    syntactic classes, known as sorts. This library uses GADTs and phantom
+    types to statically ensure that only syntactically valid ABTs are
+    representable. *)
 
 include module type of Intf (** @inline *)
 
@@ -40,7 +41,9 @@ The STLC has two sorts, types and terms:
 
   let equal_sorts
     : type s1 s2 any.
-      s1 sort -> s2 sort -> ((s1, s2) ABT.eq, (s1, s2) ABT.eq -> any) Either.t =
+      s1 sort
+      -> s2 sort
+      -> ((s1, s2) Abtkit.eq, (s1, s2) Abtkit.eq -> any) Either.t =
     fun s1 s2 -> match s1, s2 with
       | Term, Term -> Left Refl
       | Term, Type -> Right (function _ -> .)
@@ -57,15 +60,15 @@ application), and [lam] (function introduction). The operators are listed as a
 GADT that contains their sorts and arities.
 {[
   type ('arity, 'sort) operator =
-    | Unit : (ty ABT.ar, ty) operator
-    | Arrow : (ty ABT.va -> ty ABT.va -> ty ABT.ar, ty) operator
-    | Ax : (tm ABT.ar, tm) operator
-    | App : (tm ABT.va -> tm ABT.va -> tm ABT.ar, tm) operator
-    | Lam : (ty ABT.va -> (tm -> tm ABT.va) -> tm ABT.ar, tm) operator
+    | Unit : (ty Abtkit.ar, ty) operator
+    | Arrow : (ty Abtkit.va -> ty Abtkit.va -> ty Abtkit.ar, ty) operator
+    | Ax : (tm Abtkit.ar, tm) operator
+    | App : (tm Abtkit.va -> tm Abtkit.va -> tm Abtkit.ar, tm) operator
+    | Lam : (ty Abtkit.va -> (tm -> tm Abtkit.va) -> tm Abtkit.ar, tm) operator
 
   let equal_ops
     : type a1 a2 s.
-      (a1, s) operator -> (a2, s) operator -> (a1, a2) ABT.eq option =
+      (a1, s) operator -> (a2, s) operator -> (a1, a2) Abtkit.eq option =
     fun op1 op2 -> match op1, op2 with
       | App, App -> Some Refl
       | Arrow, Arrow -> Some Refl
@@ -96,7 +99,7 @@ end
 The [Sig] module can be passed to {!module:Make} to implement ABTs for the
 STLC.
 {[
-module Syn = ABT.Make(Sig)
+module Syn = Abtkit.Make(Sig)
 
 open Sig
 ]}
@@ -128,9 +131,9 @@ let to_string term =
   Buffer.contents buf
 
 let rec infer
-    (gamma : (tm Syn.var * ty ABT.va Syn.t) list)
-    (term : tm ABT.va Syn.t)
-  : (ty ABT.va Syn.t, string) result =
+    (gamma : (tm Syn.var * ty Abtkit.va Syn.t) list)
+    (term : tm Abtkit.va Syn.t)
+  : (ty Abtkit.va Syn.t, string) result =
   match Syn.out term with
   | Op(Ax, Syn.[]) -> Ok (Syn.op Unit Syn.[])
   | Op(Lam, Syn.[in_ty; abstr]) ->
@@ -158,13 +161,13 @@ let rec infer
 For the dynamic semantics, we will define a small-step interpreter. An
 interpreter result can either be a step, a value, or an error:
 {[
-type progress = Step of tm ABT.va Syn.t | Val | Err
+type progress = Step of tm Abtkit.va Syn.t | Val | Err
 ]}
 
 The interpreter shall use call-by-value (CBV), meaning that function arguments
 are evaluated to values before being substituted into the function.
 {[
-let rec cbv (term : tm ABT.va Syn.t) =
+let rec cbv (term : tm Abtkit.va Syn.t) =
   match Syn.out term with
   | Op(Ax, Syn.[]) -> Val
   | Op(Lam, Syn.[_; _]) -> Val

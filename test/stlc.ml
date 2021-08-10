@@ -14,7 +14,9 @@ module Sig = struct
 
   let equal_sorts
     : type s1 s2 any.
-      s1 sort -> s2 sort -> ((s1, s2) ABT.eq, (s1, s2) ABT.eq -> any) Either.t =
+      s1 sort
+      -> s2 sort
+      -> ((s1, s2) Abtkit.eq, (s1, s2) Abtkit.eq -> any) Either.t =
     fun s1 s2 -> match s1, s2 with
       | Term, Term -> Left Refl
       | Term, Type -> Right (function _ -> .)
@@ -22,15 +24,15 @@ module Sig = struct
       | Type, Term -> Right (function _ -> .)
 
   type ('arity, 'sort) operator =
-    | Unit : (ty ABT.ar, ty) operator
-    | Arrow : (ty ABT.va -> ty ABT.va -> ty ABT.ar, ty) operator
-    | Ax : (tm ABT.ar, tm) operator
-    | App : (tm ABT.va -> tm ABT.va -> tm ABT.ar, tm) operator
-    | Lam : (ty ABT.va -> (tm -> tm ABT.va) -> tm ABT.ar, tm) operator
+    | Unit : (ty Abtkit.ar, ty) operator
+    | Arrow : (ty Abtkit.va -> ty Abtkit.va -> ty Abtkit.ar, ty) operator
+    | Ax : (tm Abtkit.ar, tm) operator
+    | App : (tm Abtkit.va -> tm Abtkit.va -> tm Abtkit.ar, tm) operator
+    | Lam : (ty Abtkit.va -> (tm -> tm Abtkit.va) -> tm Abtkit.ar, tm) operator
 
   let equal_ops
     : type a1 a2 s.
-      (a1, s) operator -> (a2, s) operator -> (a1, a2) ABT.eq option =
+      (a1, s) operator -> (a2, s) operator -> (a1, a2) Abtkit.eq option =
     fun op1 op2 -> match op1, op2 with
       | App, App -> Some Refl
       | Arrow, Arrow -> Some Refl
@@ -54,7 +56,7 @@ module Sig = struct
   let pp_print_name = Format.pp_print_string
 end
 
-module Syn = ABT.Make(Sig)
+module Syn = Abtkit.Make(Sig)
 
 open Sig
 
@@ -78,9 +80,9 @@ let to_string term =
   Buffer.contents buf
 
 let rec infer
-    (gamma : (tm Syn.var * ty ABT.va Syn.t) list)
-    (term : tm ABT.va Syn.t)
-  : (ty ABT.va Syn.t, string) result =
+    (gamma : (tm Syn.var * ty Abtkit.va Syn.t) list)
+    (term : tm Abtkit.va Syn.t)
+  : (ty Abtkit.va Syn.t, string) result =
   match Syn.out term with
   | Op(Ax, Syn.[]) -> Ok (Syn.op Unit Syn.[])
   | Op(Lam, Syn.[in_ty; abstr]) ->
@@ -102,9 +104,9 @@ let rec infer
     end
   | Var v -> Ok (List.assoc v gamma)
 
-type progress = Step of tm ABT.va Syn.t | Val | Err
+type progress = Step of tm Abtkit.va Syn.t | Val | Err
 
-let rec cbv (term : tm ABT.va Syn.t) =
+let rec cbv (term : tm Abtkit.va Syn.t) =
   match Syn.out term with
   | Op(Ax, Syn.[]) -> Val
   | Op(Lam, Syn.[_; _]) -> Val
@@ -131,7 +133,7 @@ let rec cbv (term : tm ABT.va Syn.t) =
     end
   | Var _ -> Err
 
-let has_ty (term : tm ABT.va Syn.t) (ty : ty ABT.va Syn.t) =
+let has_ty (term : tm Abtkit.va Syn.t) (ty : ty Abtkit.va Syn.t) =
   match infer [] term with
   | Ok ty' -> Syn.aequiv ty ty'
   | Error _ -> false

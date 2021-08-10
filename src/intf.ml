@@ -31,10 +31,10 @@ type 'sort va = Valence of 'sort [@@ocaml.unbox]
     valence.
 
     Throughout this library, the ['valence] type parameter takes the form
-    ['s1 -> ... 'sk -> 's va] where each ['si] is a sort of a bound variable
+    ['s1 -> ... 'sk -> 's va] where each ['si] is the sort of a bound variable
     and ['s] is the sort of the operand, and the ['arity] type parameter takes
-    the form ['v1 -> ... -> 'vn -> 'sort ar], where each ['vi] is a valence of
-    of an operand and ['sort] is the sort of the operator. *)
+    the form ['v1 -> ... -> 'vn -> 's ar], where each ['vi] is a valence of
+    of an operand and ['s] is the sort of the operator. *)
 
 module type Signature = sig
   type 'sort sort
