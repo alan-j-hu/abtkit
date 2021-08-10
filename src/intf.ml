@@ -8,11 +8,32 @@ type (_, _) eq =
   | Refl : ('a, 'a) eq (** Proof that ['a] and ['a] are equal. *)
 (** [('a, 'b) eq] is the proposition that ['a] and ['b] are equal. *)
 
-type 'a ar = Arity of 'a [@@ocaml.unbox]
+type 'sort ar = Arity of 'sort [@@ocaml.unbox]
 (** A helper type for specifying arities. *)
 
-type 'a va = Valence of 'a [@@ocaml.unbox]
+type 'sort va = Valence of 'sort [@@ocaml.unbox]
 (** A helper type for specifying valences. *)
+
+(** The {i arity} of an operator typically consists of a sequence of sorts
+    {i s{_ 1}, ..., s{_ n}} describing the operator's parameters, and the sort
+    {i s} that the operator belongs to. The arity usually takes the form
+    {i s{_ 1} × ... × s{_ n} → s}.
+
+    Abstract binding trees record variables that are bound in the scope of a
+    term. Therefore, operands have a {i valence}, which lists the sorts of the
+    variables bound in the operand in addition to the sort of the operand
+    itself. The valence takes the form {i s{_ 1} × ... × s{_ k} → s}, where
+    {i s{_ 1}, ..., s{_ k}} are the sorts of the variables and {i s} is the
+    sort of the operand.
+
+    As a result, the arity for an operator of an abstract binding tree really
+    takes the form {i v{_ 1} × ... × v{_ n} → s} where each {i v{_ i}} is a
+    valence.
+
+    Throughout this library, the ['valence] type parameter takes the form
+    ['s1 -> ... 'sk -> 's va] where each ['si] is a sort, and the ['arity]
+    type parameter takes the form ['v1 -> ... -> 'vn -> 'sort ar], where each
+    ['vi] takes the form of a valence. *)
 
 module type Signature = sig
   type 'sort sort
@@ -21,29 +42,8 @@ module type Signature = sig
 
   type ('arity, 'sort) operator
   (** An operator is a function symbol. The operator's type contains two
-      phantom type parameters, the first for the operator's arity and the second
-      for the operator's sort.
-
-      The arity of an operator consists of a sequence of sorts {i s{_ 1}, ...,
-      s{_ n}} describing the operator's parameters, and the sort {i s} that the
-      operator belongs to. The arity usually takes the form {i s{_ 1} × ... ×
-      s{_ n} → s}.
-
-      Abstract binding trees record variables that are bound in the scope of a
-      term. Therefore, operands have a {i valence}, which lists the sorts of
-      the variables bound in the operand in addition to the sort of the operand
-      itself. The valence takes the form {i s{_ 1} × ... × s{_ k} → s}, where
-      {i s{_ 1}, ..., s{_ k}} are the sorts of the variables and {i s} is the
-      sort of the operand.
-
-      As a result, the arity for an operator of an abstract binding tree really
-      takes the form {i v{_ 1} × ... × v{_ n} → s} where each {i v{_ i}} is a
-      valence.
-
-      The ['arity] type parameter is a sequence of arrow types, ['v1 -> ... ->
-      'vn -> 'sort out] where each ['vi] has the form ['s1 -> ... 'sk ->
-      's out]. The output type ['sort] must be the sort type of the operator. An
-      operator of arity zero has type [('sort out, 'sort) operator]. *)
+      phantom type parameters, the first for the operator's arity and the
+      second for the operator's sort. *)
 
   type name
   (** The human-readable name of variables. *)
@@ -107,8 +107,8 @@ module type S = sig
   (** A view of an ABT.*)
 
   val fresh_var : 'sort sort -> name -> 'sort var
-  (** Generates a fresh variable of the given sort. The variable is unique from
-      any other variable generated from the function. *)
+  (** Generates a fresh variable of the given sort. The variable is unique
+      from any other variable generated from the function. *)
 
   val name : _ var -> name
   (** Retrieves the name of the variable. *)
