@@ -1,4 +1,5 @@
-(lang dune 2.9)
+(lang dune 2.8)
+(name abtkit)
 (generate_opam_files true)
 
 (authors "Alan Hu <alanh@ccs.neu.edu>")

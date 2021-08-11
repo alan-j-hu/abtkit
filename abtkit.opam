@@ -12,12 +12,12 @@ authors: ["Alan Hu <alanh@ccs.neu.edu>"]
 homepage: "https://alan-j-hu.github.io/abtkit"
 bug-reports: "https://github.com/alan-j-hu/abtkit/issues"
 depends: [
-  "dune" {>= "2.9"}
+  "dune" {>= "2.8"}
   "ocaml" {>= "4.12"}
   "odoc" {with-doc}
 ]
 build: [
-  ["dune" "subst" "--root" "."] {dev}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"
@@ -25,12 +25,9 @@ build: [
     name
     "-j"
     jobs
-    "--promote-install-files"
-    "false"
     "@install"
     "@runtest" {with-test}
     "@doc" {with-doc}
   ]
-  ["dune" "install" "-p" name "--create-install-files" name]
 ]
 dev-repo: "git+https://github.com/alan-j-hu/abtkit.git"
