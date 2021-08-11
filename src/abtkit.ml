@@ -136,7 +136,7 @@ module Make(Sig : Signature) = struct
       | x :: xs, y :: ys -> aequiv x y && aequiv_operands xs ys
 
   let pp_print_var ppf var =
-    pp_print_name ppf var.name
+    Format.pp_print_string ppf (name_to_string var.name)
 
   let rec pp_print : type s. Format.formatter -> s t -> unit =
     fun ppf t ->
@@ -148,12 +148,12 @@ module Make(Sig : Signature) = struct
         "%a.%a"
         pp_print_var var
         pp_print body
-    | Op(ator, []) -> Format.fprintf ppf "%a()" pp_print_op ator
+    | Op(ator, []) -> Format.fprintf ppf "%s()" (op_to_string ator)
     | Op(ator, abt :: ands) ->
       Format.fprintf
         ppf
-        "%a(@[<hv>%a%a)@]"
-        pp_print_op ator
+        "%s(@[<hv>%a%a)@]"
+        (op_to_string ator)
         pp_print abt
         pp_print_operands ands
 

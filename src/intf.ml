@@ -61,11 +61,11 @@ module type Signature = sig
   (** Checks the equality of two operators from the same sort. Iff the
       operators are equal, returns a proof that their equalities are equal. *)
 
-  val pp_print_op : Format.formatter -> ('arity, 'sort) operator -> unit
-  (** Pretty-prints an operator. *)
+  val op_to_string : ('arity, 'sort) operator -> string
+  (** The human-readable representation of an operator. *)
 
-  val pp_print_name : Format.formatter -> name -> unit
-  (** Pretty-prints a name. *)
+  val name_to_string : name -> string
+  (** The human-readable representation of a name. *)
 end
 (** Input signature of the functor {!module:Make}.
 

@@ -77,22 +77,19 @@ GADT that contains their sorts and arities.
       | Unit, Unit -> Some Refl
       | _, _ -> None
 
-  let pp_print_op : type a s. Format.formatter -> (a, s) operator -> unit =
-    fun ppf op ->
-    Format.pp_print_string ppf begin match op with
-      | Unit -> "unit"
-      | Arrow -> "arrow"
-      | Ax -> "ax"
-      | App -> "app"
-      | Lam -> "lam"
-    end
+  let op_to_string : type a s. (a, s) operator -> string = function
+    | Unit -> "unit"
+    | Arrow -> "arrow"
+    | Ax -> "ax"
+    | App -> "app"
+    | Lam -> "lam"
 ]}
 
 Finally, variable names are strings:
 {[
   type name = string
 
-  let pp_print_name = Format.pp_print_string
+  let name_to_string = Fun.id
 end
 ]}
 
