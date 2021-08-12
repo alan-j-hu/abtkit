@@ -61,20 +61,16 @@ module Make(Sort : Sort)(Operator : Operator) = struct
       | x :: xs -> poly.f x :: map_operands poly xs
 
   let rec bind : type s v. s Variable.t -> int -> v t -> v t =
-    fun v n t -> match t with
+    fun v i t -> match t with
       | Free v' ->
         begin match Variable.equal v v' with
-          | Some Refl -> Bound(n, Variable.sort v)
+          | Some Refl -> Bound(i, Variable.sort v)
           | None -> t
         end
-      | Bound(n', sort) ->
-        if n' < n then
-          t
-        else
-          Bound(n' + 1, sort)
-      | Abstr(name, sort, body) -> Abstr(name, sort, bind v (n + 1) body)
+      | Bound(b, sort) -> if b < i then t else Bound(b + 1, sort)
+      | Abstr(name, sort, body) -> Abstr(name, sort, bind v (i + 1) body)
       | Oper(ator, ands) ->
-        Oper(ator, map_operands { f = fun x -> bind v n x } ands)
+        Oper(ator, map_operands { f = fun x -> bind v i x } ands)
 
   let abs v body = Abstr(Variable.name v, v.Variable.sort, bind v 0 body)
 
@@ -88,20 +84,18 @@ module Make(Sort : Sort)(Operator : Operator) = struct
     | Var v -> var v
 
   let rec unbind : type s v. s Variable.t -> int -> v t -> v t =
-    fun v n t -> match t with
+    fun v i t -> match t with
       | Free _ -> t
-      | Bound(n', sort) ->
-        if n' = n then
+      | Bound(b, sort) ->
+        if b = i then
           match Sort.equal v.sort sort with
           | Left Refl -> Free v
           | Right _ -> failwith "unbind: Sort mismatch!"
-        else if n' < n then
-          t
-        else
-          Bound(n' - 1, sort)
-      | Abstr(name, sort, body) -> Abstr(name, sort, unbind v (n + 1) body)
+        else if b < i then t
+        else Bound(b - 1, sort)
+      | Abstr(name, sort, body) -> Abstr(name, sort, unbind v (i + 1) body)
       | Oper(ator, ands) ->
-        Oper(ator, map_operands { f = fun x -> unbind v n x } ands)
+        Oper(ator, map_operands { f = fun x -> unbind v i x } ands)
 
   let out : type v. v t -> v view = function
     | Free v -> Var v
