@@ -87,8 +87,7 @@ module Make(Sort : Sort)(Operator : Operator) = struct
     fun v i t -> match t with
       | Free _ -> t
       | Bound(b, sort) ->
-        if b = i then
-          match Sort.equal v.sort sort with
+        if b = i then match Sort.equal v.sort sort with
           | Left Refl -> Free v
           | Right _ -> failwith "unbind: Sort mismatch!"
         else if b < i then t
@@ -149,33 +148,31 @@ module Make(Sort : Sort)(Operator : Operator) = struct
     Format.pp_print_string ppf (Variable.name var)
 
   let rec pp_print : type s. Format.formatter -> s t -> unit =
-    fun ppf t ->
-    match out t with
-    | Var var -> pp_print_var ppf var
-    | Abs(var, body) ->
-      Format.fprintf
-        ppf
-        "%a.%a"
-        pp_print_var var
-        pp_print body
-    | Op(ator, []) -> Format.fprintf ppf "%s()" (Operator.to_string ator)
-    | Op(ator, abt :: ands) ->
-      Format.fprintf
-        ppf
-        "%s(@[<hv>%a%a)@]"
-        (Operator.to_string ator)
-        pp_print abt
-        pp_print_operands ands
+    fun ppf t -> match out t with
+      | Var var -> pp_print_var ppf var
+      | Abs(var, body) ->
+        Format.fprintf
+          ppf
+          "%a.%a"
+          pp_print_var var
+          pp_print body
+      | Op(ator, []) -> Format.fprintf ppf "%s()" (Operator.to_string ator)
+      | Op(ator, abt :: ands) ->
+        Format.fprintf
+          ppf
+          "%s(@[<hv>%a%a)@]"
+          (Operator.to_string ator)
+          pp_print abt
+          pp_print_operands ands
 
   and pp_print_operands
     : type a s. Format.formatter -> (a, s) operands -> unit =
-    fun ppf operands ->
-    match operands with
-    | [] -> ()
-    | abt :: next ->
-      Format.fprintf
-        ppf
-        ";@,%a%a"
-        pp_print abt
-        pp_print_operands next
+    fun ppf operands -> match operands with
+      | [] -> ()
+      | abt :: next ->
+        Format.fprintf
+          ppf
+          ";@,%a%a"
+          pp_print abt
+          pp_print_operands next
 end
