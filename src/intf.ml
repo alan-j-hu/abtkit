@@ -62,18 +62,9 @@ module type Operator = sig
 end
 (** An operator is a function symbol. *)
 
-module type Name = sig
-  type t
-  (** The human-readable name of variables. *)
-
-  val to_string : t -> string
-  (** The human-readable representation of a name. *)
-end
-
 module type S = sig
   module Sort : Sort
   module Operator : Operator
-  module Name : Name
 
   type 'sort var
   (** A variable annotated by its sort. *)
@@ -99,11 +90,11 @@ module type S = sig
     (** A variable. *)
   (** A view of an ABT.*)
 
-  val fresh_var : 'sort Sort.t -> Name.t -> 'sort var
+  val fresh_var : 'sort Sort.t -> string -> 'sort var
   (** Generates a fresh variable of the given sort. The variable is unique
       from any other variable generated from the function. *)
 
-  val name : _ var -> Name.t
+  val name : _ var -> string
   (** Retrieves the name of the variable. *)
 
   val equal_vars : 'sort1 var -> 'sort2 var -> ('sort1, 'sort2) eq option

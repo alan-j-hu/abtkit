@@ -9,10 +9,9 @@
 
 include module type of Intf (** @inline *)
 
-module Make(Sort : Sort)(Operator : Operator)(Name : Name) : S
+module Make(Sort : Sort)(Operator : Operator) : S
   with type 'sort Sort.t = 'sort Sort.t
    and type ('arity, 'sort) Operator.t = ('arity, 'sort) Operator.t
-   and type Name.t = Name.t
 (** Functor building an implementation of abstract binding trees given a
     signature. *)
 
@@ -80,20 +79,12 @@ module Operator = struct
     | App -> "app"
     | Lam -> "lam"
 end
-
-Finally, variable names are strings:
-{[
-module Name = struct
-  type t = string
-
-  let to_string = Fun.id
-end
 ]}
 
 The modules can be passed to {!module:Make} to implement ABTs for the
 STLC.
 {[
-module Syn = Abtkit.Make(Sort)(Operator)(Name)
+module Syn = Abtkit.Make(Sort)(Operator)
 
 open Operator
 ]}

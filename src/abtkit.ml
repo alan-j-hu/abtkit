@@ -8,14 +8,13 @@ include Intf
 
 let counter = ref 0
 
-module Make(Sort : Sort)(Operator : Operator)(Name : Name) = struct
+module Make(Sort : Sort)(Operator : Operator) = struct
   module Sort = Sort
   module Operator = Operator
-  module Name = Name
 
   type 'sort var = {
     id : int;
-    name : Name.t;
+    name : string;
     sort : 'sort Sort.t;
   }
 
@@ -34,7 +33,7 @@ module Make(Sort : Sort)(Operator : Operator)(Name : Name) = struct
   type 'valence t =
     | Bound : int * 'sort Sort.t -> 'sort va t
     | Free : 'sort var -> 'sort va t
-    | Abstr : Name.t * 'sort Sort.t * 'valence t -> ('sort -> 'valence) t
+    | Abstr : string * 'sort Sort.t * 'valence t -> ('sort -> 'valence) t
     | Oper
       : ('arity, 'sort) Operator.t * ('arity, 'sort) operands -> 'sort va t
 
@@ -140,7 +139,7 @@ module Make(Sort : Sort)(Operator : Operator)(Name : Name) = struct
       | x :: xs, y :: ys -> aequiv x y && aequiv_operands xs ys
 
   let pp_print_var ppf var =
-    Format.pp_print_string ppf (Name.to_string var.name)
+    Format.pp_print_string ppf var.name
 
   let rec pp_print : type s. Format.formatter -> s t -> unit =
     fun ppf t ->

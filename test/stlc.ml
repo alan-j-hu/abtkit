@@ -49,13 +49,7 @@ module Operator = struct
     | Lam -> "lam"
 end
 
-module Name = struct
-  type t = string
-
-  let to_string = Fun.id
-end
-
-module Syn = Abtkit.Make(Sort)(Operator)(Name)
+module Syn = Abtkit.Make(Sort)(Operator)
 
 open Operator
 
