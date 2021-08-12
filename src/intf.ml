@@ -36,50 +36,44 @@ type 'sort va = Valence of 'sort [@@ocaml.unbox]
     the form ['v1 -> ... -> 'vn -> 's ar], where each ['vi] is a valence of
     of an operand and ['s] is the sort of the operator. *)
 
-module type Signature = sig
-  module Sort : sig
-    type 'sort t
-    (** A sort is the syntactic class that an operator belongs to. The type
-        parameter is a phantom type that represents the sort. *)
+module type Sort = sig
+  type 'sort t
+  (** The type parameter is a phantom type that represents the sort. *)
 
-    val equal : 'a t -> 'b t -> (('a, 'b) eq, ('a, 'b) eq -> 'any) Either.t
-    (** Decides the equality of two sorts. Iff the sorts are equal, returns
-        a proof that their types are equal. Iff the sorts are unequal, it
-        returns a proof that their types are not equal. *)
-  end
-
-  module Operator : sig
-    type ('arity, 'sort) t
-    (** An operator is a function symbol. The operator's type contains two
-        phantom type parameters, the first for the operator's arity and the
-        second for the operator's sort. *)
-
-    val equal
-      : ('arity1, 'sort) t -> ('arity2, 'sort) t -> ('arity1, 'arity2) eq option
-    (** Checks the equality of two operators from the same sort. Iff the
-        operators are equal, returns a proof that their arities are equal. *)
-
-    val to_string : ('arity, 'sort) t -> string
-    (** The human-readable representation of an operator. *)
-  end
-
-  module Name : sig
-    type t
-    (** The human-readable name of variables. *)
-
-    val to_string : t -> string
-    (** The human-readable representation of a name. *)
-  end
+  val equal : 'a t -> 'b t -> (('a, 'b) eq, ('a, 'b) eq -> 'any) Either.t
+  (** Decides the equality of two sorts. Iff the sorts are equal, returns
+      a proof that their types are equal. Iff the sorts are unequal, it
+      returns a proof that their types are not equal. *)
 end
-(** Input signature of the functor {!module:Make}.
+(** A sort is the syntactic class that an operator belongs to. *)
 
-    A signature describes the symbols and syntax of some mathematical theory,
-    whether it be a logic, language, or algebraic structure. It is not to be
-    confused with the "signatures" of the metalanguage (OCaml), which were
-    influenced by the same mathematical concepts. *)
+module type Operator = sig
+  type ('arity, 'sort) t
+  (** The operator's type contains two phantom type parameters, the first for
+      the operator's arity and the second for the operator's sort. *)
+
+  val equal
+    : ('arity1, 'sort) t -> ('arity2, 'sort) t -> ('arity1, 'arity2) eq option
+  (** Checks the equality of two operators from the same sort. Iff the
+      operators are equal, returns a proof that their arities are equal. *)
+
+  val to_string : ('arity, 'sort) t -> string
+  (** The human-readable representation of an operator. *)
+end
+(** An operator is a function symbol. *)
+
+module type Name = sig
+  type t
+  (** The human-readable name of variables. *)
+
+  val to_string : t -> string
+  (** The human-readable representation of a name. *)
+end
 
 module type S = sig
-  include Signature
+  module Sort : Sort
+  module Operator : Operator
+  module Name : Name
 
   type 'sort var
   (** A variable annotated by its sort. *)

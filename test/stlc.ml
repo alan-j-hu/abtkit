@@ -4,62 +4,60 @@
    License, v. 2.0. If a copy of the MPL was not distributed with this
    file, You can obtain one at https://mozilla.org/MPL/2.0/. *)
 
-module Sig = struct
-  type ty = Ty
-  type tm = Tm
+type ty = Ty
+type tm = Tm
 
-  module Sort = struct
-    type 'sort t =
-      | Term : tm t
-      | Type : ty t
+module Sort = struct
+  type 'sort t =
+    | Term : tm t
+    | Type : ty t
 
-    let equal
-      : type s1 s2 any.
-        s1 t -> s2 t
-        -> ((s1, s2) Abtkit.eq, (s1, s2) Abtkit.eq -> any) Either.t =
-      fun s1 s2 -> match s1, s2 with
-        | Term, Term -> Left Refl
-        | Term, Type -> Right (function _ -> .)
-        | Type, Type -> Left Refl
-        | Type, Term -> Right (function _ -> .)
-  end
-
-  module Operator = struct
-    type ('arity, 'sort) t =
-      | Unit : (ty Abtkit.ar, ty) t
-      | Arrow : (ty Abtkit.va -> ty Abtkit.va -> ty Abtkit.ar, ty) t
-      | Ax : (tm Abtkit.ar, tm) t
-      | App : (tm Abtkit.va -> tm Abtkit.va -> tm Abtkit.ar, tm) t
-      | Lam : (ty Abtkit.va -> (tm -> tm Abtkit.va) -> tm Abtkit.ar, tm) t
-
-    let equal
-      : type a1 a2 s. (a1, s) t -> (a2, s) t -> (a1, a2) Abtkit.eq option =
-      fun op1 op2 -> match op1, op2 with
-        | App, App -> Some Refl
-        | Arrow, Arrow -> Some Refl
-        | Ax, Ax -> Some Refl
-        | Lam, Lam -> Some Refl
-        | Unit, Unit -> Some Refl
-        | _, _ -> None
-
-    let to_string : type a s. (a, s) t -> string = function
-      | Unit -> "unit"
-      | Arrow -> "arrow"
-      | Ax -> "ax"
-      | App -> "app"
-      | Lam -> "lam"
-  end
-
-  module Name = struct
-    type t = string
-
-    let to_string = Fun.id
-  end
+  let equal
+    : type s1 s2 any.
+      s1 t -> s2 t
+      -> ((s1, s2) Abtkit.eq, (s1, s2) Abtkit.eq -> any) Either.t =
+    fun s1 s2 -> match s1, s2 with
+      | Term, Term -> Left Refl
+      | Term, Type -> Right (function _ -> .)
+      | Type, Type -> Left Refl
+      | Type, Term -> Right (function _ -> .)
 end
 
-module Syn = Abtkit.Make(Sig)
+module Operator = struct
+  type ('arity, 'sort) t =
+    | Unit : (ty Abtkit.ar, ty) t
+    | Arrow : (ty Abtkit.va -> ty Abtkit.va -> ty Abtkit.ar, ty) t
+    | Ax : (tm Abtkit.ar, tm) t
+    | App : (tm Abtkit.va -> tm Abtkit.va -> tm Abtkit.ar, tm) t
+    | Lam : (ty Abtkit.va -> (tm -> tm Abtkit.va) -> tm Abtkit.ar, tm) t
 
-open Sig
+  let equal
+    : type a1 a2 s. (a1, s) t -> (a2, s) t -> (a1, a2) Abtkit.eq option =
+    fun op1 op2 -> match op1, op2 with
+      | App, App -> Some Refl
+      | Arrow, Arrow -> Some Refl
+      | Ax, Ax -> Some Refl
+      | Lam, Lam -> Some Refl
+      | Unit, Unit -> Some Refl
+      | _, _ -> None
+
+  let to_string : type a s. (a, s) t -> string = function
+    | Unit -> "unit"
+    | Arrow -> "arrow"
+    | Ax -> "ax"
+    | App -> "app"
+    | Lam -> "lam"
+end
+
+module Name = struct
+  type t = string
+
+  let to_string = Fun.id
+end
+
+module Syn = Abtkit.Make(Sort)(Operator)(Name)
+
+open Operator
 
 let ( let+ ) res f = Result.map f res
 

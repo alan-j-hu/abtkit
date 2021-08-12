@@ -9,10 +9,10 @@
 
 include module type of Intf (** @inline *)
 
-module Make(Sig : Signature) : S
-  with type 'sort Sort.t = 'sort Sig.Sort.t
-   and type ('arity, 'sort) Operator.t = ('arity, 'sort) Sig.Operator.t
-   and type Name.t = Sig.Name.t
+module Make(Sort : Sort)(Operator : Operator)(Name : Name) : S
+  with type 'sort Sort.t = 'sort Sort.t
+   and type ('arity, 'sort) Operator.t = ('arity, 'sort) Operator.t
+   and type Name.t = Name.t
 (** Functor building an implementation of abstract binding trees given a
     signature. *)
 
@@ -25,83 +25,77 @@ simply typed lambda calculus (STLC).
 
 {2 Signature}
 
-First, create an input module for the language signature:
-{[
-module Sig = struct
-]}
-
 The STLC has two sorts, types and terms:
 {[
-  type ty = Ty
-  type tm = Tm
+type ty = Ty
+type tm = Tm
 
-  module Sort = struct
-    type 'sort t =
-      | Term : tm t
-      | Type : ty t
+module Sort = struct
+  type 'sort t =
+    | Term : tm t
+    | Type : ty t
 
-    let equal
-      : type s1 s2 any.
-        s1 t -> s2 t
-        -> ((s1, s2) Abtkit.eq, (s1, s2) Abtkit.eq -> any) Either.t =
-      fun s1 s2 -> match s1, s2 with
-        | Term, Term -> Left Refl
-        | Term, Type -> Right (function _ -> .)
-        | Type, Type -> Left Refl
-        | Type, Term -> Right (function _ -> .)
-  end
+  let equal
+    : type s1 s2 any.
+      s1 t -> s2 t
+      -> ((s1, s2) Abtkit.eq, (s1, s2) Abtkit.eq -> any) Either.t =
+    fun s1 s2 -> match s1, s2 with
+      | Term, Term -> Left Refl
+      | Term, Type -> Right (function _ -> .)
+      | Type, Type -> Left Refl
+      | Type, Term -> Right (function _ -> .)
+end
 ]}
 
-The sorts are represented as phantom types. The type [_ sort] is a proxy that
-holds the type-level sort.
+The sorts are represented as phantom types. The type [_ Sort.t] is a proxy
+that holds the type-level sort.
 
 The operators of the language are [unit] (the unit type), [arrow] (the
 function type), [ax] (the unique inhabitant of the unit type), [app] (function
 application), and [lam] (function introduction). The operators are listed as a
 GADT that contains their sorts and arities.
 {[
-  module Operator = struct
-    type ('arity, 'sort) t =
-      | Unit : (ty Abtkit.ar, ty) t
-      | Arrow : (ty Abtkit.va -> ty Abtkit.va -> ty Abtkit.ar, ty) t
-      | Ax : (tm Abtkit.ar, tm) t
-      | App : (tm Abtkit.va -> tm Abtkit.va -> tm Abtkit.ar, tm) t
-      | Lam : (ty Abtkit.va -> (tm -> tm Abtkit.va) -> tm Abtkit.ar, tm) t
+module Operator = struct
+  type ('arity, 'sort) t =
+    | Unit : (ty Abtkit.ar, ty) t
+    | Arrow : (ty Abtkit.va -> ty Abtkit.va -> ty Abtkit.ar, ty) t
+    | Ax : (tm Abtkit.ar, tm) t
+    | App : (tm Abtkit.va -> tm Abtkit.va -> tm Abtkit.ar, tm) t
+    | Lam : (ty Abtkit.va -> (tm -> tm Abtkit.va) -> tm Abtkit.ar, tm) t
 
-    let equal
-      : type a1 a2 s. (a1, s) t -> (a2, s) t -> (a1, a2) Abtkit.eq option =
-      fun op1 op2 -> match op1, op2 with
-        | App, App -> Some Refl
-        | Arrow, Arrow -> Some Refl
-        | Ax, Ax -> Some Refl
-        | Lam, Lam -> Some Refl
-        | Unit, Unit -> Some Refl
-        | _, _ -> None
+  let equal
+    : type a1 a2 s. (a1, s) t -> (a2, s) t -> (a1, a2) Abtkit.eq option =
+    fun op1 op2 -> match op1, op2 with
+      | App, App -> Some Refl
+      | Arrow, Arrow -> Some Refl
+      | Ax, Ax -> Some Refl
+      | Lam, Lam -> Some Refl
+      | Unit, Unit -> Some Refl
+      | _, _ -> None
 
-    let to_string : type a s. (a, s) t -> string = function
-      | Unit -> "unit"
-      | Arrow -> "arrow"
-      | Ax -> "ax"
-      | App -> "app"
-      | Lam -> "lam"
-  end
+  let to_string : type a s. (a, s) t -> string = function
+    | Unit -> "unit"
+    | Arrow -> "arrow"
+    | Ax -> "ax"
+    | App -> "app"
+    | Lam -> "lam"
+end
 
 Finally, variable names are strings:
 {[
-  module Name = struct
-    type t = string
+module Name = struct
+  type t = string
 
-    let to_string = Fun.id
-  end
+  let to_string = Fun.id
 end
 ]}
 
-The [Sig] module can be passed to {!module:Make} to implement ABTs for the
+The modules can be passed to {!module:Make} to implement ABTs for the
 STLC.
 {[
-module Syn = Abtkit.Make(Sig)
+module Syn = Abtkit.Make(Sort)(Operator)(Name)
 
-open Sig
+open Operator
 ]}
 
 {2 Static Semantics}

@@ -8,8 +8,10 @@ include Intf
 
 let counter = ref 0
 
-module Make(Sig : Signature) = struct
-  include Sig
+module Make(Sort : Sort)(Operator : Operator)(Name : Name) = struct
+  module Sort = Sort
+  module Operator = Operator
+  module Name = Name
 
   type 'sort var = {
     id : int;
