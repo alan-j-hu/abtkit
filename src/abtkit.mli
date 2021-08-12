@@ -72,13 +72,15 @@ module Operator = struct
       | Unit, Unit -> Some Refl
       | _, _ -> None
 
-  let to_string : type a s. (a, s) t -> string = function
-    | Unit -> "unit"
-    | Arrow -> "arrow"
-    | Ax -> "ax"
-    | App -> "app"
-    | Lam -> "lam"
-end
+  let pp_print : type a s. Format.formatter -> (a, s) t -> unit =
+    fun fmt op ->
+    Format.pp_print_string fmt
+      (match op with
+       | Unit -> "unit"
+       | Arrow -> "arrow"
+       | Ax -> "ax"
+       | App -> "app"
+       | Lam -> "lam")
 ]}
 
 The modules can be passed to {!module:Make} to implement ABTs for the

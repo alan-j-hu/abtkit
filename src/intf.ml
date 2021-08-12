@@ -59,8 +59,8 @@ module type Operator = sig
   (** Checks the equality of two operators from the same sort. Iff the
       operators are equal, returns a proof that their arities are equal. *)
 
-  val to_string : ('arity, 'sort) t -> string
-  (** The human-readable representation of an operator. *)
+  val pp_print : Format.formatter -> ('arity, 'sort) t -> unit
+  (** Prettyprints the operator. *)
 end
 (** An operator is a function symbol. *)
 

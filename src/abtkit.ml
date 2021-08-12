@@ -156,12 +156,12 @@ module Make(Sort : Sort)(Operator : Operator) = struct
           "%a.%a"
           pp_print_var var
           pp_print body
-      | Op(ator, []) -> Format.fprintf ppf "%s()" (Operator.to_string ator)
+      | Op(ator, []) -> Format.fprintf ppf "%a()" Operator.pp_print ator
       | Op(ator, abt :: ands) ->
         Format.fprintf
           ppf
-          "%s(@[<hv>%a%a)@]"
-          (Operator.to_string ator)
+          "%a(@[<hv>%a%a)@]"
+          Operator.pp_print ator
           pp_print abt
           pp_print_operands ands
 
