@@ -145,11 +145,24 @@ let () =
                    ; let y = Syn.Variable.fresh Term "y" in
                      Syn.abs y id_unit ]
   in
+  let const =
+    Syn.op Lam Syn.[ unit_arr_unit
+                   ; let x = Syn.Variable.fresh Term "x" in
+                     Syn.abs x
+                       (Syn.op Lam Syn.[ Syn.op Unit Syn.[]
+                                       ; let y = Syn.Variable.fresh Term "y" in
+                                         Syn.abs y (Syn.var x) ]) ]
+  in
   assert (has_ty ax unit_type);
   assert (has_ty id_unit unit_arr_unit);
   assert (cbv ax = Val);
   assert (cbv (Syn.op App Syn.[id_unit; ax]) = Step ax);
   assert (cbv (Syn.op App Syn.[ret_id_unit; ax]) = Step id_unit);
+  assert (cbv (Syn.op App Syn.[const; id_unit])
+               = Step (Syn.op Lam Syn.[ Syn.op Unit Syn.[]
+                                      ; let y = Syn.Variable.fresh Term "y" in
+                                      Syn.abs y id_unit ]
+                      ));
   assert (to_string unit_arr_unit = "arrow(unit();unit())");
   assert (to_string id_unit = "lam(unit();x.x)");
   assert (to_string ret_id_unit = "lam(unit();y.lam(unit();x.x))")
