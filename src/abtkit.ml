@@ -11,28 +11,33 @@ let counter = ref 0
 module Make(Sort : Sort)(Operator : Operator) = struct
   module Sort = Sort
   module Operator = Operator
+  module Variable = struct
+    type 'sort t = {
+      id : int;
+      name : string;
+      sort : 'sort Sort.t;
+    }
 
-  type 'sort var = {
-    id : int;
-    name : string;
-    sort : 'sort Sort.t;
-  }
+    type 'sort sort = 'sort Sort.t
 
-  let fresh_var sort name =
-    let id = !counter in
-    counter := id + 1;
-    { id; name; sort }
+    let fresh sort name =
+      let id = !counter in
+      counter := id + 1;
+      { id; name; sort }
 
-  let name var = var.name
+    let sort var = var.sort
 
-  let equal_vars : type s1 s2 . s1 var -> s2 var -> (s1, s2) eq option =
-    fun v1 v2 -> match Sort.equal v1.sort v2.sort with
-      | Left Refl when v1.id = v2.id -> Some Refl
-      | _ -> None
+    let name var = var.name
+
+    let equal : type s1 s2. s1 t -> s2 t -> (s1, s2) eq option =
+      fun v1 v2 -> match Sort.equal v1.sort v2.sort with
+        | Left Refl when v1.id = v2.id -> Some Refl
+        | _ -> None
+  end
 
   type 'valence t =
     | Bound : int * 'sort Sort.t -> 'sort va t
-    | Free : 'sort var -> 'sort va t
+    | Free : 'sort Variable.t -> 'sort va t
     | Abstr : string * 'sort Sort.t * 'valence t -> ('sort -> 'valence) t
     | Oper
       : ('arity, 'sort) Operator.t * ('arity, 'sort) operands -> 'sort va t
@@ -42,10 +47,10 @@ module Make(Sort : Sort)(Operator : Operator) = struct
     | (::) : 'valence t * ('arity, 'sort) operands -> ('valence -> 'arity, 'sort) operands
 
   type 'valence view =
-    | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
+    | Abs : 'sort Variable.t * 'valence t -> ('sort -> 'valence) view
     | Op
       : ('arity, 'sort) Operator.t * ('arity, 'sort) operands -> 'sort va view
-    | Var : 'sort var -> 'sort va view
+    | Var : 'sort Variable.t -> 'sort va view
 
   type poly = { f : 'v. 'v t -> 'v t } [@@ocaml.unboxed]
 
@@ -55,11 +60,11 @@ module Make(Sort : Sort)(Operator : Operator) = struct
       | [] -> []
       | x :: xs -> poly.f x :: map_operands poly xs
 
-  let rec bind : type s v. s var -> v t -> v t =
+  let rec bind : type s v. s Variable.t -> v t -> v t =
     fun v t -> match t with
       | Free v' ->
-        begin match equal_vars v v' with
-          | Some Refl -> Bound(0, v.sort)
+        begin match Variable.equal v v' with
+          | Some Refl -> Bound(0, Variable.sort v)
           | None -> t
         end
       | Bound(i, sort) -> Bound(i + 1, sort)
@@ -67,7 +72,7 @@ module Make(Sort : Sort)(Operator : Operator) = struct
       | Oper(ator, ands) ->
         Oper(ator, map_operands { f = fun x -> bind v x } ands)
 
-  let abs v body = Abstr(v.name, v.sort, bind v body)
+  let abs v body = Abstr(Variable.name v, v.Variable.sort, bind v body)
 
   let op ator ands = Oper(ator, ands)
 
@@ -78,7 +83,7 @@ module Make(Sort : Sort)(Operator : Operator) = struct
     | Op(ator, ands) -> op ator ands
     | Var v -> var v
 
-  let rec unbind : type s v. s var -> v t -> v t =
+  let rec unbind : type s v. s Variable.t -> v t -> v t =
     fun v t -> match t with
       | Free _ -> t
       | Bound(0, sort) ->
@@ -95,12 +100,13 @@ module Make(Sort : Sort)(Operator : Operator) = struct
     | Free v -> Var v
     | Bound _ -> failwith "out: Unbound variable!"
     | Abstr(name, sort, body) ->
-      let v = fresh_var sort name in
+      let v = Variable.fresh sort name in
       Abs(v, unbind v body)
     | Oper(ator, ands) -> Op(ator, ands)
 
   let rec subst
-    : type s1 s2. s1 Sort.t -> (s1 var -> s1 va t option) -> s2 t -> s2 t =
+    : type s1 s2.
+      s1 Sort.t -> (s1 Variable.t -> s1 va t option) -> s2 t -> s2 t =
     fun sort sub abt -> match abt with
       | Free var as abt ->
         begin match Sort.equal sort var.sort with
@@ -119,7 +125,7 @@ module Make(Sort : Sort)(Operator : Operator) = struct
   let rec aequiv : type v. v t -> v t -> bool = fun t1 t2 ->
     match t1, t2 with
     | Free var1, Free var2 ->
-      begin match equal_vars var1 var2 with
+      begin match Variable.equal var1 var2 with
         | Some Refl -> true
         | None -> false
       end
@@ -139,7 +145,7 @@ module Make(Sort : Sort)(Operator : Operator) = struct
       | x :: xs, y :: ys -> aequiv x y && aequiv_operands xs ys
 
   let pp_print_var ppf var =
-    Format.pp_print_string ppf var.name
+    Format.pp_print_string ppf (Variable.name var)
 
   let rec pp_print : type s. Format.formatter -> s t -> unit =
     fun ppf t ->

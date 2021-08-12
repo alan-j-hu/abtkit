@@ -62,12 +62,32 @@ module type Operator = sig
 end
 (** An operator is a function symbol. *)
 
+module type Variable = sig
+  type 'sort t
+  (** A variable annotated by its sort. *)
+
+  type 'sort sort
+  (** A sort. *)
+
+  val fresh : 'sort sort -> string -> 'sort t
+  (** Generates a fresh variable of the given sort. The variable is unique
+      from any other variable generated from the function. *)
+
+  val sort : 'sort t -> 'sort sort
+  (** Retrieves the sort of the variable. *)
+
+  val name : _ t -> string
+  (** Retrieves the name of the variable. *)
+
+  val equal : 'sort1 t -> 'sort2 t -> ('sort1, 'sort2) eq option
+  (** Checks two variables for equality. Iff the variables are equal, returns
+      [Some proof] that their sorts are the same. *)
+end
+
 module type S = sig
   module Sort : Sort
   module Operator : Operator
-
-  type 'sort var
-  (** A variable annotated by its sort. *)
+  module Variable : Variable with type 'sort sort = 'sort Sort.t
 
   type 'valence t
   (** An abstract binding tree (ABT). ['valence] is a phantom type parameter
@@ -81,33 +101,22 @@ module type S = sig
   (** A list of operands. *)
 
   type 'valence view =
-    | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
+    | Abs : 'sort Variable.t * 'valence t -> ('sort -> 'valence) view
     (** An abstractor, which binds a variable within a term. *)
     | Op
       : ('arity, 'sort) Operator.t * ('arity, 'sort) operands -> 'sort va view
     (** An operator applied to operands. *)
-    | Var : 'sort var -> 'sort va view
+    | Var : 'sort Variable.t -> 'sort va view
     (** A variable. *)
   (** A view of an ABT.*)
 
-  val fresh_var : 'sort Sort.t -> string -> 'sort var
-  (** Generates a fresh variable of the given sort. The variable is unique
-      from any other variable generated from the function. *)
-
-  val name : _ var -> string
-  (** Retrieves the name of the variable. *)
-
-  val equal_vars : 'sort1 var -> 'sort2 var -> ('sort1, 'sort2) eq option
-  (** Checks two variables for equality. Iff the variables are equal, returns
-      [Some proof] that their sorts are the same. *)
-
-  val abs : 'sort var -> 'valence t -> ('sort -> 'valence) t
+  val abs : 'sort Variable.t -> 'valence t -> ('sort -> 'valence) t
   (** Constructs an abstractor ABT. *)
 
   val op : ('arity, 'sort) Operator.t -> ('arity, 'sort) operands -> 'sort va t
   (** Constructs an operation ABT. *)
 
-  val var : 'sort var -> 'sort va t
+  val var : 'sort Variable.t -> 'sort va t
   (** Constructs a variable ABT. *)
 
   val into : 'valence view -> 'valence t
@@ -118,7 +127,7 @@ module type S = sig
 
   val subst
     : 'sort Sort.t
-    -> ('sort var -> 'sort va t option)
+    -> ('sort Variable.t -> 'sort va t option)
     -> 'valence t
     -> 'valence t
   (** Applies a substitution to the ABT. *)

@@ -116,7 +116,7 @@ let to_string term =
   Buffer.contents buf
 
 let rec infer
-    (gamma : (tm Syn.var * ty Abtkit.va Syn.t) list)
+    (gamma : (tm Syn.Variable.t * ty Abtkit.va Syn.t) list)
     (term : tm Abtkit.va Syn.t)
   : (ty Abtkit.va Syn.t, string) result =
   match Syn.out term with
@@ -167,7 +167,7 @@ let rec cbv (term : tm Abtkit.va Syn.t) =
               | Op(Lam, Syn.[_; abstr]) ->
                 let Abs(var, body) = Syn.out abstr in
                 Step (body |> Syn.subst Term begin fun var' ->
-                    match Syn.equal_vars var var' with
+                    match Syn.Variable.equal var var' with
                     | Some Refl -> Some arg
                     | None -> None
                   end)
