@@ -60,19 +60,23 @@ module Make(Sort : Sort)(Operator : Operator) = struct
       | [] -> []
       | x :: xs -> poly.f x :: map_operands poly xs
 
-  let rec bind : type s v. s Variable.t -> v t -> v t =
-    fun v t -> match t with
+  let rec bind : type s v. s Variable.t -> int -> v t -> v t =
+    fun v n t -> match t with
       | Free v' ->
         begin match Variable.equal v v' with
-          | Some Refl -> Bound(0, Variable.sort v)
+          | Some Refl -> Bound(n, Variable.sort v)
           | None -> t
         end
-      | Bound(i, sort) -> Bound(i + 1, sort)
-      | Abstr(name, sort, body) -> Abstr(name, sort, bind v body)
+      | Bound(n', sort) ->
+        if n' < n then
+          t
+        else
+          Bound(n' + 1, sort)
+      | Abstr(name, sort, body) -> Abstr(name, sort, bind v (n + 1) body)
       | Oper(ator, ands) ->
-        Oper(ator, map_operands { f = fun x -> bind v x } ands)
+        Oper(ator, map_operands { f = fun x -> bind v n x } ands)
 
-  let abs v body = Abstr(Variable.name v, v.Variable.sort, bind v body)
+  let abs v body = Abstr(Variable.name v, v.Variable.sort, bind v 0 body)
 
   let op ator ands = Oper(ator, ands)
 
@@ -83,25 +87,28 @@ module Make(Sort : Sort)(Operator : Operator) = struct
     | Op(ator, ands) -> op ator ands
     | Var v -> var v
 
-  let rec unbind : type s v. s Variable.t -> v t -> v t =
-    fun v t -> match t with
+  let rec unbind : type s v. s Variable.t -> int -> v t -> v t =
+    fun v n t -> match t with
       | Free _ -> t
-      | Bound(0, sort) ->
-        begin match Sort.equal v.sort sort with
+      | Bound(n', sort) ->
+        if n' = n then
+          match Sort.equal v.sort sort with
           | Left Refl -> Free v
           | Right _ -> failwith "unbind: Sort mismatch!"
-        end
-      | Bound(n, sort) -> Bound(n - 1, sort)
-      | Abstr(name, sort, body) -> Abstr(name, sort, unbind v body)
+        else if n' < n then
+          t
+        else
+          Bound(n' - 1, sort)
+      | Abstr(name, sort, body) -> Abstr(name, sort, unbind v (n + 1) body)
       | Oper(ator, ands) ->
-        Oper(ator, map_operands { f = fun x -> unbind v x } ands)
+        Oper(ator, map_operands { f = fun x -> unbind v n x } ands)
 
   let out : type v. v t -> v view = function
     | Free v -> Var v
     | Bound _ -> failwith "out: Unbound variable!"
     | Abstr(name, sort, body) ->
       let v = Variable.fresh sort name in
-      Abs(v, unbind v body)
+      Abs(v, unbind v 0 body)
     | Oper(ator, ands) -> Op(ator, ands)
 
   let rec subst

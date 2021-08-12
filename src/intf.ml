@@ -40,7 +40,9 @@ module type Sort = sig
   type 'sort t
   (** The type parameter is a phantom type that represents the sort. *)
 
-  val equal : 'a t -> 'b t -> (('a, 'b) eq, ('a, 'b) eq -> 'any) Either.t
+  val equal
+    : 'sort1 t -> 'sort2 t
+    -> (('sort1, 'sort2) eq, ('sort1, 'sort2) eq -> 'any) Either.t
   (** Decides the equality of two sorts. Iff the sorts are equal, returns
       a proof that their types are equal. Iff the sorts are unequal, it
       returns a proof that their types are not equal. *)
