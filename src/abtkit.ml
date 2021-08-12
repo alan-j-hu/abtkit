@@ -13,8 +13,8 @@ module Make(Sig : Signature) = struct
 
   type 'sort var = {
     id : int;
-    name : name;
-    sort : 'sort sort;
+    name : Name.t;
+    sort : 'sort Sort.t;
   }
 
   let fresh_var sort name =
@@ -25,15 +25,16 @@ module Make(Sig : Signature) = struct
   let name var = var.name
 
   let equal_vars : type s1 s2 . s1 var -> s2 var -> (s1, s2) eq option =
-    fun v1 v2 -> match equal_sorts v1.sort v2.sort with
+    fun v1 v2 -> match Sort.equal v1.sort v2.sort with
       | Left Refl when v1.id = v2.id -> Some Refl
       | _ -> None
 
   type 'valence t =
-    | Bound : int * 'sort sort -> 'sort va t
+    | Bound : int * 'sort Sort.t -> 'sort va t
     | Free : 'sort var -> 'sort va t
-    | Abstr : name * 'sort sort * 'valence t -> ('sort -> 'valence) t
-    | Oper : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort va t
+    | Abstr : Name.t * 'sort Sort.t * 'valence t -> ('sort -> 'valence) t
+    | Oper
+      : ('arity, 'sort) Operator.t * ('arity, 'sort) operands -> 'sort va t
 
   and ('arity, 'sort) operands =
     | [] : ('sort ar, 'sort) operands
@@ -41,7 +42,8 @@ module Make(Sig : Signature) = struct
 
   type 'valence view =
     | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
-    | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort va view
+    | Op
+      : ('arity, 'sort) Operator.t * ('arity, 'sort) operands -> 'sort va view
     | Var : 'sort var -> 'sort va view
 
   type poly = { f : 'v. 'v t -> 'v t } [@@ocaml.unboxed]
@@ -79,7 +81,7 @@ module Make(Sig : Signature) = struct
     fun v t -> match t with
       | Free _ -> t
       | Bound(0, sort) ->
-        begin match equal_sorts v.sort sort with
+        begin match Sort.equal v.sort sort with
           | Left Refl -> Free v
           | Right _ -> failwith "unbind: Sort mismatch!"
         end
@@ -97,10 +99,10 @@ module Make(Sig : Signature) = struct
     | Oper(ator, ands) -> Op(ator, ands)
 
   let rec subst
-    : type s1 s2. s1 sort -> (s1 var -> s1 va t option) -> s2 t -> s2 t =
+    : type s1 s2. s1 Sort.t -> (s1 var -> s1 va t option) -> s2 t -> s2 t =
     fun sort sub abt -> match abt with
       | Free var as abt ->
-        begin match equal_sorts sort var.sort with
+        begin match Sort.equal sort var.sort with
           | Left Refl ->
             begin match sub var with
               | Some abt -> abt
@@ -123,7 +125,7 @@ module Make(Sig : Signature) = struct
     | Bound(var1, _), Bound(var2, _) -> var1 = var2
     | Abstr(_, _, body1), Abstr(_, _, body2) -> aequiv body1 body2
     | Oper(ator1, ands1), Oper(ator2, ands2) ->
-      begin match equal_ops ator1 ator2 with
+      begin match Operator.equal ator1 ator2 with
         | Some Refl -> aequiv_operands ands1 ands2
         | None -> false
       end
@@ -136,7 +138,7 @@ module Make(Sig : Signature) = struct
       | x :: xs, y :: ys -> aequiv x y && aequiv_operands xs ys
 
   let pp_print_var ppf var =
-    Format.pp_print_string ppf (name_to_string var.name)
+    Format.pp_print_string ppf (Name.to_string var.name)
 
   let rec pp_print : type s. Format.formatter -> s t -> unit =
     fun ppf t ->
@@ -148,12 +150,12 @@ module Make(Sig : Signature) = struct
         "%a.%a"
         pp_print_var var
         pp_print body
-    | Op(ator, []) -> Format.fprintf ppf "%s()" (op_to_string ator)
+    | Op(ator, []) -> Format.fprintf ppf "%s()" (Operator.to_string ator)
     | Op(ator, abt :: ands) ->
       Format.fprintf
         ppf
         "%s(@[<hv>%a%a)@]"
-        (op_to_string ator)
+        (Operator.to_string ator)
         pp_print abt
         pp_print_operands ands
 

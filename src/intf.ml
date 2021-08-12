@@ -37,35 +37,39 @@ type 'sort va = Valence of 'sort [@@ocaml.unbox]
     of an operand and ['s] is the sort of the operator. *)
 
 module type Signature = sig
-  type 'sort sort
-  (** A sort is the syntactic class that an operator belongs to. The type
-      parameter is a phantom type that represents the sort. *)
+  module Sort : sig
+    type 'sort t
+    (** A sort is the syntactic class that an operator belongs to. The type
+        parameter is a phantom type that represents the sort. *)
 
-  type ('arity, 'sort) operator
-  (** An operator is a function symbol. The operator's type contains two
-      phantom type parameters, the first for the operator's arity and the
-      second for the operator's sort. *)
+    val equal : 'a t -> 'b t -> (('a, 'b) eq, ('a, 'b) eq -> 'any) Either.t
+    (** Decides the equality of two sorts. Iff the sorts are equal, returns
+        a proof that their types are equal. Iff the sorts are unequal, it
+        returns a proof that their types are not equal. *)
+  end
 
-  type name
-  (** The human-readable name of variables. *)
+  module Operator : sig
+    type ('arity, 'sort) t
+    (** An operator is a function symbol. The operator's type contains two
+        phantom type parameters, the first for the operator's arity and the
+        second for the operator's sort. *)
 
-  val equal_sorts
-    : 'a sort -> 'b sort -> (('a, 'b) eq, ('a, 'b) eq -> 'any) Either.t
-  (** Decides the equality of two sorts. Iff the sorts are equal, returns
-      a proof that their types are equal. Iff the sorts are unequal, it
-      returns a proof that their types are not equal. *)
+    val equal
+      : ('arity1, 'sort) t -> ('arity2, 'sort) t -> ('arity1, 'arity2) eq option
+    (** Checks the equality of two operators from the same sort. Iff the
+        operators are equal, returns a proof that their arities are equal. *)
 
-  val equal_ops
-    : ('arity1, 'sort) operator -> ('arity2, 'sort) operator
-    -> ('arity1, 'arity2) eq option
-  (** Checks the equality of two operators from the same sort. Iff the
-      operators are equal, returns a proof that their arities are equal. *)
+    val to_string : ('arity, 'sort) t -> string
+    (** The human-readable representation of an operator. *)
+  end
 
-  val op_to_string : ('arity, 'sort) operator -> string
-  (** The human-readable representation of an operator. *)
+  module Name : sig
+    type t
+    (** The human-readable name of variables. *)
 
-  val name_to_string : name -> string
-  (** The human-readable representation of a name. *)
+    val to_string : t -> string
+    (** The human-readable representation of a name. *)
+  end
 end
 (** Input signature of the functor {!module:Make}.
 
@@ -75,14 +79,7 @@ end
     influenced by the same mathematical concepts. *)
 
 module type S = sig
-  type 'sort sort
-  (** An alias of {!type:Signature.sort}. *)
-
-  type ('arity, 'sort) operator
-  (** An alias of {!type:Signature.operator}. *)
-
-  type name
-  (** An alias of {!type:Signature.name}. *)
+  include Signature
 
   type 'sort var
   (** A variable annotated by its sort. *)
@@ -101,17 +98,18 @@ module type S = sig
   type 'valence view =
     | Abs : 'sort var * 'valence t -> ('sort -> 'valence) view
     (** An abstractor, which binds a variable within a term. *)
-    | Op : ('arity, 'sort) operator * ('arity, 'sort) operands -> 'sort va view
+    | Op
+      : ('arity, 'sort) Operator.t * ('arity, 'sort) operands -> 'sort va view
     (** An operator applied to operands. *)
     | Var : 'sort var -> 'sort va view
     (** A variable. *)
   (** A view of an ABT.*)
 
-  val fresh_var : 'sort sort -> name -> 'sort var
+  val fresh_var : 'sort Sort.t -> Name.t -> 'sort var
   (** Generates a fresh variable of the given sort. The variable is unique
       from any other variable generated from the function. *)
 
-  val name : _ var -> name
+  val name : _ var -> Name.t
   (** Retrieves the name of the variable. *)
 
   val equal_vars : 'sort1 var -> 'sort2 var -> ('sort1, 'sort2) eq option
@@ -121,7 +119,7 @@ module type S = sig
   val abs : 'sort var -> 'valence t -> ('sort -> 'valence) t
   (** Constructs an abstractor ABT. *)
 
-  val op : ('arity, 'sort) operator -> ('arity, 'sort) operands -> 'sort va t
+  val op : ('arity, 'sort) Operator.t -> ('arity, 'sort) operands -> 'sort va t
   (** Constructs an operation ABT. *)
 
   val var : 'sort var -> 'sort va t
@@ -133,7 +131,11 @@ module type S = sig
   val out : 'valence t -> 'valence view
   (** Views an ABT. *)
 
-  val subst : 'sort sort -> ('sort var -> 'sort va t option) -> 'valence t -> 'valence t
+  val subst
+    : 'sort Sort.t
+    -> ('sort var -> 'sort va t option)
+    -> 'valence t
+    -> 'valence t
   (** Applies a substitution to the ABT. *)
 
   val aequiv : 'valence t -> 'valence t -> bool

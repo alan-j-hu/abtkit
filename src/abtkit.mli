@@ -10,9 +10,9 @@
 include module type of Intf (** @inline *)
 
 module Make(Sig : Signature) : S
-  with type 'sort sort = 'sort Sig.sort
-   and type ('arity, 'sort) operator = ('arity, 'sort) Sig.operator
-   and type name = Sig.name
+  with type 'sort Sort.t = 'sort Sig.Sort.t
+   and type ('arity, 'sort) Operator.t = ('arity, 'sort) Sig.Operator.t
+   and type Name.t = Sig.Name.t
 (** Functor building an implementation of abstract binding trees given a
     signature. *)
 
@@ -35,20 +35,21 @@ The STLC has two sorts, types and terms:
   type ty = Ty
   type tm = Tm
 
-  type 'sort sort =
-    | Term : tm sort
-    | Type : ty sort
+  module Sort = struct
+    type 'sort t =
+      | Term : tm t
+      | Type : ty t
 
-  let equal_sorts
-    : type s1 s2 any.
-      s1 sort
-      -> s2 sort
-      -> ((s1, s2) Abtkit.eq, (s1, s2) Abtkit.eq -> any) Either.t =
-    fun s1 s2 -> match s1, s2 with
-      | Term, Term -> Left Refl
-      | Term, Type -> Right (function _ -> .)
-      | Type, Type -> Left Refl
-      | Type, Term -> Right (function _ -> .)
+    let equal
+      : type s1 s2 any.
+        s1 t -> s2 t
+        -> ((s1, s2) Abtkit.eq, (s1, s2) Abtkit.eq -> any) Either.t =
+      fun s1 s2 -> match s1, s2 with
+        | Term, Term -> Left Refl
+        | Term, Type -> Right (function _ -> .)
+        | Type, Type -> Left Refl
+        | Type, Term -> Right (function _ -> .)
+  end
 ]}
 
 The sorts are represented as phantom types. The type [_ sort] is a proxy that
@@ -59,37 +60,39 @@ function type), [ax] (the unique inhabitant of the unit type), [app] (function
 application), and [lam] (function introduction). The operators are listed as a
 GADT that contains their sorts and arities.
 {[
-  type ('arity, 'sort) operator =
-    | Unit : (ty Abtkit.ar, ty) operator
-    | Arrow : (ty Abtkit.va -> ty Abtkit.va -> ty Abtkit.ar, ty) operator
-    | Ax : (tm Abtkit.ar, tm) operator
-    | App : (tm Abtkit.va -> tm Abtkit.va -> tm Abtkit.ar, tm) operator
-    | Lam : (ty Abtkit.va -> (tm -> tm Abtkit.va) -> tm Abtkit.ar, tm) operator
+  module Operator = struct
+    type ('arity, 'sort) t =
+      | Unit : (ty Abtkit.ar, ty) t
+      | Arrow : (ty Abtkit.va -> ty Abtkit.va -> ty Abtkit.ar, ty) t
+      | Ax : (tm Abtkit.ar, tm) t
+      | App : (tm Abtkit.va -> tm Abtkit.va -> tm Abtkit.ar, tm) t
+      | Lam : (ty Abtkit.va -> (tm -> tm Abtkit.va) -> tm Abtkit.ar, tm) t
 
-  let equal_ops
-    : type a1 a2 s.
-      (a1, s) operator -> (a2, s) operator -> (a1, a2) Abtkit.eq option =
-    fun op1 op2 -> match op1, op2 with
-      | App, App -> Some Refl
-      | Arrow, Arrow -> Some Refl
-      | Ax, Ax -> Some Refl
-      | Lam, Lam -> Some Refl
-      | Unit, Unit -> Some Refl
-      | _, _ -> None
+    let equal
+      : type a1 a2 s. (a1, s) t -> (a2, s) t -> (a1, a2) Abtkit.eq option =
+      fun op1 op2 -> match op1, op2 with
+        | App, App -> Some Refl
+        | Arrow, Arrow -> Some Refl
+        | Ax, Ax -> Some Refl
+        | Lam, Lam -> Some Refl
+        | Unit, Unit -> Some Refl
+        | _, _ -> None
 
-  let op_to_string : type a s. (a, s) operator -> string = function
-    | Unit -> "unit"
-    | Arrow -> "arrow"
-    | Ax -> "ax"
-    | App -> "app"
-    | Lam -> "lam"
-]}
+    let to_string : type a s. (a, s) t -> string = function
+      | Unit -> "unit"
+      | Arrow -> "arrow"
+      | Ax -> "ax"
+      | App -> "app"
+      | Lam -> "lam"
+  end
 
 Finally, variable names are strings:
 {[
-  type name = string
+  module Name = struct
+    type t = string
 
-  let name_to_string = Fun.id
+    let to_string = Fun.id
+  end
 end
 ]}
 

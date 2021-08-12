@@ -8,49 +8,53 @@ module Sig = struct
   type ty = Ty
   type tm = Tm
 
-  type 'sort sort =
-    | Term : tm sort
-    | Type : ty sort
+  module Sort = struct
+    type 'sort t =
+      | Term : tm t
+      | Type : ty t
 
-  let equal_sorts
-    : type s1 s2 any.
-      s1 sort
-      -> s2 sort
-      -> ((s1, s2) Abtkit.eq, (s1, s2) Abtkit.eq -> any) Either.t =
-    fun s1 s2 -> match s1, s2 with
-      | Term, Term -> Left Refl
-      | Term, Type -> Right (function _ -> .)
-      | Type, Type -> Left Refl
-      | Type, Term -> Right (function _ -> .)
+    let equal
+      : type s1 s2 any.
+        s1 t -> s2 t
+        -> ((s1, s2) Abtkit.eq, (s1, s2) Abtkit.eq -> any) Either.t =
+      fun s1 s2 -> match s1, s2 with
+        | Term, Term -> Left Refl
+        | Term, Type -> Right (function _ -> .)
+        | Type, Type -> Left Refl
+        | Type, Term -> Right (function _ -> .)
+  end
 
-  type ('arity, 'sort) operator =
-    | Unit : (ty Abtkit.ar, ty) operator
-    | Arrow : (ty Abtkit.va -> ty Abtkit.va -> ty Abtkit.ar, ty) operator
-    | Ax : (tm Abtkit.ar, tm) operator
-    | App : (tm Abtkit.va -> tm Abtkit.va -> tm Abtkit.ar, tm) operator
-    | Lam : (ty Abtkit.va -> (tm -> tm Abtkit.va) -> tm Abtkit.ar, tm) operator
+  module Operator = struct
+    type ('arity, 'sort) t =
+      | Unit : (ty Abtkit.ar, ty) t
+      | Arrow : (ty Abtkit.va -> ty Abtkit.va -> ty Abtkit.ar, ty) t
+      | Ax : (tm Abtkit.ar, tm) t
+      | App : (tm Abtkit.va -> tm Abtkit.va -> tm Abtkit.ar, tm) t
+      | Lam : (ty Abtkit.va -> (tm -> tm Abtkit.va) -> tm Abtkit.ar, tm) t
 
-  let equal_ops
-    : type a1 a2 s.
-      (a1, s) operator -> (a2, s) operator -> (a1, a2) Abtkit.eq option =
-    fun op1 op2 -> match op1, op2 with
-      | App, App -> Some Refl
-      | Arrow, Arrow -> Some Refl
-      | Ax, Ax -> Some Refl
-      | Lam, Lam -> Some Refl
-      | Unit, Unit -> Some Refl
-      | _, _ -> None
+    let equal
+      : type a1 a2 s. (a1, s) t -> (a2, s) t -> (a1, a2) Abtkit.eq option =
+      fun op1 op2 -> match op1, op2 with
+        | App, App -> Some Refl
+        | Arrow, Arrow -> Some Refl
+        | Ax, Ax -> Some Refl
+        | Lam, Lam -> Some Refl
+        | Unit, Unit -> Some Refl
+        | _, _ -> None
 
-  let op_to_string : type a s. (a, s) operator -> string = function
-    | Unit -> "unit"
-    | Arrow -> "arrow"
-    | Ax -> "ax"
-    | App -> "app"
-    | Lam -> "lam"
+    let to_string : type a s. (a, s) t -> string = function
+      | Unit -> "unit"
+      | Arrow -> "arrow"
+      | Ax -> "ax"
+      | App -> "app"
+      | Lam -> "lam"
+  end
 
-  type name = string
+  module Name = struct
+    type t = string
 
-  let name_to_string = Fun.id
+    let to_string = Fun.id
+  end
 end
 
 module Syn = Abtkit.Make(Sig)
