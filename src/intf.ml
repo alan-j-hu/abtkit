@@ -59,7 +59,7 @@ module type Operator = sig
   (** Checks the equality of two operators from the same sort. Iff the
       operators are equal, returns a proof that their arities are equal. *)
 
-  val pp_print : Format.formatter -> ('arity, 'sort) t -> unit
+  val pp_print : Format.formatter -> (_, _) t -> unit
   (** Prettyprints the operator. *)
 end
 (** An operator is a function symbol. *)
@@ -138,7 +138,7 @@ module type S = sig
   (** Checks two ABTs for alpha-equivalence. Two ABTs are alpha-equivalent iff
       they are structurally equal up to renaming of bound variables. *)
 
-  val pp_print : Format.formatter -> 'valence t -> unit
+  val pp_print : Format.formatter -> _ t -> unit
   (** Pretty-prints an ABT. *)
 end
 (** Output signature of the functor {!module:Make}. *)
