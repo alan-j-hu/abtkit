@@ -59,7 +59,7 @@ module type Signature = sig
     : ('arity1, 'sort) operator -> ('arity2, 'sort) operator
     -> ('arity1, 'arity2) eq option
   (** Checks the equality of two operators from the same sort. Iff the
-      operators are equal, returns a proof that their equalities are equal. *)
+      operators are equal, returns a proof that their arities are equal. *)
 
   val op_to_string : ('arity, 'sort) operator -> string
   (** The human-readable representation of an operator. *)
