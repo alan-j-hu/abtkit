@@ -108,7 +108,7 @@ module Make(Sort : Sort)(Operator : Operator) = struct
     : type s1 s2.
       s1 Sort.t -> (s1 Variable.t -> s1 va t option) -> s2 t -> s2 t =
     fun sort sub abt -> match abt with
-      | Free var as abt ->
+      | Free var ->
         begin match Sort.equal sort var.sort with
           | Left Refl ->
             begin match sub var with
@@ -117,7 +117,7 @@ module Make(Sort : Sort)(Operator : Operator) = struct
             end
           | Right _ -> abt
         end
-      | Bound _ as abt -> abt
+      | Bound _ -> abt
       | Abstr(name, sort', body) -> Abstr(name, sort', subst sort sub body)
       | Oper(ator, ands) ->
         Oper(ator, map_operands { f = fun x -> subst sort sub x } ands)
