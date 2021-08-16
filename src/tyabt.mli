@@ -149,7 +149,7 @@ let rec infer
 For the dynamic semantics, we will define a small-step interpreter. An
 interpreter result can either be a step, a value, or an error:
 {[
-type progress = Step of tm Abtkit.va Syn.t | Val | Err
+type progress = Step of tm Tyabt.va Syn.t | Val | Err
 ]}
 
 The interpreter shall use call-by-value (CBV), meaning that function arguments
