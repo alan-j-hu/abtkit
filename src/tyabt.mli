@@ -1,6 +1,6 @@
 (** Many-sorted abstract binding trees.
 
-    Abtkit is an implementation of many-sorted abstract binding trees.
+    Tyabt is an implementation of many-sorted abstract binding trees.
     Abstract binding trees (ABTs) are similar to abstract syntax trees, but
     also keep track of variable scopes. Many-sorted ABTs support multiple
     syntactic classes, known as sorts. This library uses GADTs and phantom
@@ -37,7 +37,7 @@ module Sort = struct
   let equal
     : type s1 s2 any.
       s1 t -> s2 t
-      -> ((s1, s2) Abtkit.eq, (s1, s2) Abtkit.eq -> any) Either.t =
+      -> ((s1, s2) Tyabt.eq, (s1, s2) Tyabt.eq -> any) Either.t =
     fun s1 s2 -> match s1, s2 with
       | Term, Term -> Left Refl
       | Term, Type -> Right (function _ -> .)
@@ -56,14 +56,14 @@ GADT that contains their sorts and arities.
 {[
 module Operator = struct
   type ('arity, 'sort) t =
-    | Unit : (ty Abtkit.ar, ty) t
-    | Arrow : (ty Abtkit.va -> ty Abtkit.va -> ty Abtkit.ar, ty) t
-    | Ax : (tm Abtkit.ar, tm) t
-    | App : (tm Abtkit.va -> tm Abtkit.va -> tm Abtkit.ar, tm) t
-    | Lam : (ty Abtkit.va -> (tm -> tm Abtkit.va) -> tm Abtkit.ar, tm) t
+    | Unit : (ty Tyabt.ar, ty) t
+    | Arrow : (ty Tyabt.va -> ty Tyabt.va -> ty Tyabt.ar, ty) t
+    | Ax : (tm Tyabt.ar, tm) t
+    | App : (tm Tyabt.va -> tm Tyabt.va -> tm Tyabt.ar, tm) t
+    | Lam : (ty Tyabt.va -> (tm -> tm Tyabt.va) -> tm Tyabt.ar, tm) t
 
   let equal
-    : type a1 a2 s. (a1, s) t -> (a2, s) t -> (a1, a2) Abtkit.eq option =
+    : type a1 a2 s. (a1, s) t -> (a2, s) t -> (a1, a2) Tyabt.eq option =
     fun op1 op2 -> match op1, op2 with
       | App, App -> Some Refl
       | Arrow, Arrow -> Some Refl
@@ -81,12 +81,13 @@ module Operator = struct
        | Ax -> "ax"
        | App -> "app"
        | Lam -> "lam")
+end
 ]}
 
 The modules can be passed to {!module:Make} to implement ABTs for the
 STLC.
 {[
-module Syn = Abtkit.Make(Sort)(Operator)
+module Syn = Tyabt.Make(Sort)(Operator)
 
 open Operator
 ]}
@@ -118,9 +119,9 @@ let to_string term =
   Buffer.contents buf
 
 let rec infer
-    (gamma : (tm Syn.Variable.t * ty Abtkit.va Syn.t) list)
-    (term : tm Abtkit.va Syn.t)
-  : (ty Abtkit.va Syn.t, string) result =
+    (gamma : (tm Syn.Variable.t * ty Tyabt.va Syn.t) list)
+    (term : tm Tyabt.va Syn.t)
+  : (ty Tyabt.va Syn.t, string) result =
   match Syn.out term with
   | Op(Ax, Syn.[]) -> Ok (Syn.op Unit Syn.[])
   | Op(Lam, Syn.[in_ty; abstr]) ->
@@ -154,7 +155,7 @@ type progress = Step of tm Abtkit.va Syn.t | Val | Err
 The interpreter shall use call-by-value (CBV), meaning that function arguments
 are evaluated to values before being substituted into the function.
 {[
-let rec cbv (term : tm Abtkit.va Syn.t) =
+let rec cbv (term : tm Tyabt.va Syn.t) =
   match Syn.out term with
   | Op(Ax, Syn.[]) -> Val
   | Op(Lam, Syn.[_; _]) -> Val

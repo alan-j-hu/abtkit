@@ -1,6 +1,6 @@
-# Abtkit
+# Tyabt
 
-Abtkit is an OCaml implementation of many-sorted abstract binding trees.
+Tyabt is an OCaml implementation of many-sorted abstract binding trees.
 Abstract binding trees (ABTs) are similar to abstract syntax trees, but also
 keep track of variable scopes. Many-sorted ABTs support multiple syntactic
 classes, known as sorts. This library uses GADTs and phantom types to
