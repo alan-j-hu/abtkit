@@ -145,7 +145,7 @@ module Make(Sort : Sort)(Operator : Operator) = struct
       | x :: xs, y :: ys -> aequiv x y && aequiv_operands xs ys
 
   let pp_print_var ppf var =
-    Format.pp_print_string ppf (Variable.name var)
+    Format.fprintf ppf "%s/%d" (Variable.name var) var.id
 
   let rec pp_print : type s. Format.formatter -> s t -> unit =
     fun ppf t -> match out t with

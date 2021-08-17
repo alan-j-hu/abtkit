@@ -165,6 +165,4 @@ let () =
                = Step (Syn.op Lam Syn.[ unit_type
                                       ; let y = Syn.Variable.fresh Term "y" in
                                         Syn.abs y id_unit ]));
-  assert (to_string unit_arr_unit = "arrow(unit();unit())");
-  assert (to_string id_unit = "lam(unit();x.x)");
-  assert (to_string ret_id_unit = "lam(unit();y.lam(unit();x.x))")
+  assert (to_string unit_arr_unit = "arrow(unit();unit())")
