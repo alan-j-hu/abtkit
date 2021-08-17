@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Tyabt (tyabt.Tyabt)</title><link rel="stylesheet" href="../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 1.5.3"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body><div class="content"><header><nav><a href="../index.html">Up</a> – <a href="../index.html">tyabt</a> &#x00BB; Tyabt</nav><h1>Module <code>Tyabt</code></h1><p>Many-sorted abstract binding trees.</p><p>Tyabt is an implementation of many-sorted abstract binding trees. Abstract binding trees (ABTs) are similar to abstract syntax trees, but also keep track of variable scopes. Many-sorted ABTs support multiple syntactic classes, known as sorts. This library uses GADTs and phantom types to statically ensure that only syntactically valid ABTs are representable.</p><nav class="toc"><ul><li><a href="#example:-simply-typed-lambda-calculus">Example: Simply Typed Lambda Calculus</a><ul><li><a href="#signature">Signature</a></li><li><a href="#static-semantics">Static Semantics</a></li><li><a href="#dynamic-semantics">Dynamic Semantics</a></li></ul></li></ul></nav></header><div><div class="spec include"><div class="doc"><dl><dt class="spec type" id="type-eq"><a href="#type-eq" class="anchor"></a><code><span class="keyword">type</span> <span>(_, _) eq</span></code><code> = </code><table class="variant"><tr id="type-eq.Refl" class="anchored"><td class="def constructor"><a href="#type-eq.Refl" class="anchor"></a><code>| </code><code><span class="constructor">Refl</span> : <span><span>(<span class="type-var">'a</span>, <span class="type-var">'a</span>)</span> <a href="index.html#type-eq">eq</a></span></code></td><td class="doc"><p>Proof that <code>'a</code> and <code>'a</code> are equal.</p></td></tr></table></dt><dd><p><code>('a, 'b) eq</code> is the proposition that <code>'a</code> and <code>'b</code> are equal.</p></dd></dl><dl><dt class="spec type" id="type-ar"><a href="#type-ar" class="anchor"></a><code><span class="keyword">type</span> <span>'sort ar</span></code><code> = </code><table class="variant"><tr id="type-ar.Arity" class="anchored"><td class="def constructor"><a href="#type-ar.Arity" class="anchor"></a><code>| </code><code><span class="constructor">Arity</span> <span class="keyword">of</span> <span class="type-var">'sort</span></code></td></tr></table></dt><dd><p>A helper type for specifying arities.</p></dd></dl><dl><dt class="spec type" id="type-va"><a href="#type-va" class="anchor"></a><code><span class="keyword">type</span> <span>'sort va</span></code><code> = </code><table class="variant"><tr id="type-va.Valence" class="anchored"><td class="def constructor"><a href="#type-va.Valence" class="anchor"></a><code>| </code><code><span class="constructor">Valence</span> <span class="keyword">of</span> <span class="type-var">'sort</span></code></td></tr></table></dt><dd><p>A helper type for specifying valences.</p></dd></dl><aside><p>The <i>arity</i> of an operator typically consists of a sequence of sorts <i>s<sub>1</sub>, ..., s<sub>n</sub></i> describing the operator's parameters, and the sort <i>s</i> that the operator belongs to. The arity usually takes the form <i>s<sub>1</sub> × ... × s<sub>n</sub> → s</i>.</p><p>Abstract binding trees record variables that are bound in the scope of a term. Therefore, operands have a <i>valence</i>, which lists the sorts of the variables bound in the operand in addition to the sort of the operand itself. The valence takes the form <i>s<sub>1</sub> × ... × s<sub>k</sub> → s</i>, where <i>s<sub>1</sub>, ..., s<sub>k</sub></i> are the sorts of the variables and <i>s</i> is the sort of the operand.</p><p>As a result, the arity for an operator of an abstract binding tree really takes the form <i>v<sub>1</sub> × ... × v<sub>n</sub> → s</i> where each <i>v<sub>i</sub></i> is a valence.</p><p>Throughout this library, the <code>'valence</code> type parameter takes the form <code>'s1 -&gt; ... 'sk -&gt; 's va</code> where each <code>'si</code> is the sort of a bound variable and <code>'s</code> is the sort of the operand, and the <code>'arity</code> type parameter takes the form <code>'v1 -&gt; ... -&gt; 'vn -&gt; 's ar</code>, where each <code>'vi</code> is a valence of of an operand and <code>'s</code> is the sort of the operator.</p></aside><dl><dt class="spec module-type" id="module-type-Sort"><a href="#module-type-Sort" class="anchor"></a><code><span class="keyword">module</span> <span class="keyword">type</span> <a href="module-type-Sort/index.html">Sort</a> = <span class="keyword">sig</span> ... <span class="keyword">end</span></code></dt><dd><p>A sort is the syntactic class that an operator belongs to.</p></dd></dl><dl><dt class="spec module-type" id="module-type-Operator"><a href="#module-type-Operator" class="anchor"></a><code><span class="keyword">module</span> <span class="keyword">type</span> <a href="module-type-Operator/index.html">Operator</a> = <span class="keyword">sig</span> ... <span class="keyword">end</span></code></dt><dd><p>An operator is a function symbol.</p></dd></dl><div class="spec module-type" id="module-type-Variable"><a href="#module-type-Variable" class="anchor"></a><code><span class="keyword">module</span> <span class="keyword">type</span> <a href="module-type-Variable/index.html">Variable</a> = <span class="keyword">sig</span> ... <span class="keyword">end</span></code></div><dl><dt class="spec module-type" id="module-type-S"><a href="#module-type-S" class="anchor"></a><code><span class="keyword">module</span> <span class="keyword">type</span> <a href="module-type-S/index.html">S</a> = <span class="keyword">sig</span> ... <span class="keyword">end</span></code></dt><dd><p>Output signature of the functor <a href="Make/index.html"><code>Make</code></a>.</p></dd></dl></div></div></div><dl><dt class="spec module" id="module-Make"><a href="#module-Make" class="anchor"></a><code><span class="keyword">module</span> <a href="Make/index.html">Make</a> : <span class="keyword">functor</span> (<a href="Make/argument-1-Sort/index.html">Sort</a> : <a href="index.html#module-type-Sort">Sort</a>) <span>&#45;&gt;</span> <span class="keyword">functor</span> (<a href="Make/argument-2-Operator/index.html">Operator</a> : <a href="index.html#module-type-Operator">Operator</a>) <span>&#45;&gt;</span> <a href="index.html#module-type-S">S</a> <span class="keyword">with</span> <span class="keyword">type</span> <span>'sort <a href="Make/Sort/index.html#type-t">Sort.t</a></span> = <span><span class="type-var">'sort</span> <a href="Make/argument-1-Sort/index.html#type-t">Sort.t</a></span> <span class="keyword">and</span> <span class="keyword">type</span> <span>('arity, 'sort) <a href="Make/Operator/index.html#type-t">Operator.t</a></span> = <span><span>(<span class="type-var">'arity</span>, <span class="type-var">'sort</span>)</span> <a href="Make/argument-2-Operator/index.html#type-t">Operator.t</a></span></code></dt><dd><p>Functor building an implementation of abstract binding trees given a signature.</p></dd></dl><section><header><h2 id="example:-simply-typed-lambda-calculus"><a href="#example:-simply-typed-lambda-calculus" class="anchor"></a>Example: Simply Typed Lambda Calculus</h2><p>Here is an example of using this library to create binding trees for the simply typed lambda calculus (STLC).</p></header><section><header><h3 id="signature"><a href="#signature" class="anchor"></a>Signature</h3><p>The STLC has two sorts, types and terms:</p><pre><code class="ml">type ty = Ty
+type tm = Tm
+
+module Sort = struct
+  type 'sort t =
+    | Term : tm t
+    | Type : ty t
+
+  let equal
+    : type s1 s2 any.
+      s1 t -&gt; s2 t
+      -&gt; ((s1, s2) Tyabt.eq, (s1, s2) Tyabt.eq -&gt; any) Either.t =
+    fun s1 s2 -&gt; match s1, s2 with
+      | Term, Term -&gt; Left Refl
+      | Term, Type -&gt; Right (function _ -&gt; .)
+      | Type, Type -&gt; Left Refl
+      | Type, Term -&gt; Right (function _ -&gt; .)
+end</code></pre><p>The sorts are represented as phantom types. The type <code>_ Sort.t</code> is a proxy that holds the type-level sort.</p><p>The operators of the language are <code>unit</code> (the unit type), <code>arrow</code> (the function type), <code>ax</code> (the unique inhabitant of the unit type), <code>app</code> (function application), and <code>lam</code> (function introduction). The operators are listed as a GADT that contains their sorts and arities.</p><pre><code class="ml">module Operator = struct
+  type ('arity, 'sort) t =
+    | Unit : (ty Tyabt.ar, ty) t
+    | Arrow : (ty Tyabt.va -&gt; ty Tyabt.va -&gt; ty Tyabt.ar, ty) t
+    | Ax : (tm Tyabt.ar, tm) t
+    | App : (tm Tyabt.va -&gt; tm Tyabt.va -&gt; tm Tyabt.ar, tm) t
+    | Lam : (ty Tyabt.va -&gt; (tm -&gt; tm Tyabt.va) -&gt; tm Tyabt.ar, tm) t
+
+  let equal
+    : type a1 a2 s. (a1, s) t -&gt; (a2, s) t -&gt; (a1, a2) Tyabt.eq option =
+    fun op1 op2 -&gt; match op1, op2 with
+      | App, App -&gt; Some Refl
+      | Arrow, Arrow -&gt; Some Refl
+      | Ax, Ax -&gt; Some Refl
+      | Lam, Lam -&gt; Some Refl
+      | Unit, Unit -&gt; Some Refl
+      | _, _ -&gt; None
+
+  let pp_print : type a s. Format.formatter -&gt; (a, s) t -&gt; unit =
+    fun fmt op -&gt;
+    Format.pp_print_string fmt
+      (match op with
+       | Unit -&gt; &quot;unit&quot;
+       | Arrow -&gt; &quot;arrow&quot;
+       | Ax -&gt; &quot;ax&quot;
+       | App -&gt; &quot;app&quot;
+       | Lam -&gt; &quot;lam&quot;)
+end</code></pre><p>The modules can be passed to <a href="Make/index.html"><code>Make</code></a> to implement ABTs for the STLC.</p><pre><code class="ml">module Syn = Tyabt.Make(Sort)(Operator)
+
+open Operator</code></pre></header></section><section><header><h3 id="static-semantics"><a href="#static-semantics" class="anchor"></a>Static Semantics</h3><p>The following are utility functions for working with results:</p><pre><code class="ml">let ( let+ ) res f = Result.map f res
+
+let ( and+ ) res1 res2 = match res1, res2 with
+  | Ok x, Ok y -&gt; Ok (x, y)
+  | Ok _, Error e -&gt; Error e
+  | Error e, Ok _ -&gt; Error e
+  | Error e, Error _ -&gt; Error e
+
+let ( and* ) = ( and+ )
+
+let ( let* ) = Result.bind</code></pre><p>Create a function for performing type inference:</p><pre><code class="ml">let to_string term =
+  let buf = Buffer.create 32 in
+  let ppf = Format.formatter_of_buffer buf in
+  Syn.pp_print ppf term;
+  Format.pp_print_flush ppf ();
+  Buffer.contents buf
+
+let rec infer
+    (gamma : (tm Syn.Variable.t * ty Tyabt.va Syn.t) list)
+    (term : tm Tyabt.va Syn.t)
+  : (ty Tyabt.va Syn.t, string) result =
+  match Syn.out term with
+  | Op(Ax, Syn.[]) -&gt; Ok (Syn.op Unit Syn.[])
+  | Op(Lam, Syn.[in_ty; abstr]) -&gt;
+    let Abs(var, body) = Syn.out abstr in
+    let+ out_ty = infer ((var, in_ty) :: gamma) body in
+    Syn.op Arrow Syn.[in_ty; out_ty]
+  | Op(App, Syn.[f; arg]) -&gt;
+    let* f_ty = infer gamma f
+    and* arg_ty = infer gamma arg in
+    begin match Syn.out f_ty with
+      | Op(Arrow, Syn.[in_ty; out_ty]) -&gt;
+        if Syn.aequiv in_ty arg_ty then
+          Ok out_ty
+        else
+          Error (&quot;Expected argument of type &quot; ^ to_string in_ty ^
+                 &quot;, got argument of type &quot; ^ to_string arg_ty ^ &quot;!&quot;)
+      | _ -&gt;
+        Error (&quot;Expected function, got term of type &quot; ^ to_string f_ty ^ &quot;!&quot;)
+    end
+  | Var v -&gt; Ok (List.assoc v gamma)</code></pre></header></section><section><header><h3 id="dynamic-semantics"><a href="#dynamic-semantics" class="anchor"></a>Dynamic Semantics</h3><p>For the dynamic semantics, we will define a small-step interpreter. An interpreter result can either be a step, a value, or an error:</p><pre><code class="ml">type progress = Step of tm Tyabt.va Syn.t | Val | Err</code></pre><p>The interpreter shall use call-by-value (CBV), meaning that function arguments are evaluated to values before being substituted into the function.</p><pre><code class="ml">let rec cbv (term : tm Tyabt.va Syn.t) =
+  match Syn.out term with
+  | Op(Ax, Syn.[]) -&gt; Val
+  | Op(Lam, Syn.[_; _]) -&gt; Val
+  | Op(App, Syn.[f; arg]) -&gt;
+    begin match cbv f with
+      | Step next -&gt; Step (Syn.op App Syn.[next; arg])
+      | Val -&gt;
+        begin match cbv arg with
+          | Step next -&gt; Step (Syn.op App Syn.[f; next])
+          | Val -&gt;
+            begin match Syn.out f with
+              | Op(Lam, Syn.[_; abstr]) -&gt;
+                let Abs(var, body) = Syn.out abstr in
+                Step (body |&gt; Syn.subst Term begin fun var' -&gt;
+                    match Syn.Variable.equal var var' with
+                    | Some Refl -&gt; Some arg
+                    | None -&gt; None
+                  end)
+              | _ -&gt; Err
+            end
+          | Err -&gt; Err
+        end
+      | Err -&gt; Err
+    end
+  | Var _ -&gt; Err</code></pre></header></section></section></div></body></html>
