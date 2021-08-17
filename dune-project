@@ -6,6 +6,7 @@
 (maintainers "Alan Hu <alanh@ccs.neu.edu>")
 (homepage "https://alan-j-hu.github.io/tyabt")
 (source (github alan-j-hu/tyabt))
+(documentation https://alan-j-hu.github.io/tyabt)
 
 (package
  (name tyabt)

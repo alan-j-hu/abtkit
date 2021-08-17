@@ -10,6 +10,7 @@ only syntactically valid ABTs are representable."""
 maintainer: ["Alan Hu <alanh@ccs.neu.edu>"]
 authors: ["Alan Hu <alanh@ccs.neu.edu>"]
 homepage: "https://alan-j-hu.github.io/tyabt"
+doc: "https://alan-j-hu.github.io/tyabt"
 bug-reports: "https://github.com/alan-j-hu/tyabt/issues"
 depends: [
   "dune" {>= "2.8"}
